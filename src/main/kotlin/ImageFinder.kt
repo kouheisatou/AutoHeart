@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.awt.image.BufferedImage
+import java.util.Calendar
 
 class ImageFinder(image: BufferedImage, template: BufferedImage) {
     private val threshold = template.grayScale().edge().calcBinalizeThreshold()
@@ -28,11 +29,14 @@ class ImageFinder(image: BufferedImage, template: BufferedImage) {
 
     var searching = mutableStateOf(false)
     var percentage = mutableStateOf(0)
+    val processingTime = mutableStateOf<Long?>(null)
+
     fun startSearching() {
-        if(searching.value){
+        if (searching.value) {
             return
         }
         searching.value = true
+        val startTime = Calendar.getInstance().timeInMillis
 
         CoroutineScope(Dispatchers.IO).launch {
             image.find(
@@ -45,12 +49,13 @@ class ImageFinder(image: BufferedImage, template: BufferedImage) {
                     searchResult.add(coordinate)
                     println(coordinate)
                 },
-                onYChanged = {y, height ->
+                onYChanged = { y, height ->
                     percentage.value = y * 100 / height
                 },
                 onSearchFinished = { result ->
                     println(result)
                     searching.value = false
+                    processingTime.value = Calendar.getInstance().timeInMillis - startTime
                 },
             )
         }
@@ -76,9 +81,12 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                     Text("Start")
                 }
             }
+            if (imageFinder.processingTime.value != null) {
+                Text("${imageFinder.processingTime.value!!.toDouble() / 1000.0}[s]")
+            }
         }
 
-        Image(bitmap = imageFinder.template.toComposeImageBitmap(), null,)
+        Image(bitmap = imageFinder.template.toComposeImageBitmap(), null)
 
         Box {
             Image(

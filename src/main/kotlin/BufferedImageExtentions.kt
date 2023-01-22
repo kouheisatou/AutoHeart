@@ -138,7 +138,8 @@ suspend fun BufferedImage.find(
             }
             currentSearchCoordinateChanged?.invoke(Pair(x, y))
 
-            var incorrectCount = 0
+            var errorCount = 0
+            var consecutiveErrorCount = 0
             templatePixelLoop@ for (edgePixel in template.edgePixels.withIndex()) {
                 // unmatched pixel
                 if (template.getRGB(edgePixel.value.first, edgePixel.value.second) != getRGB(
@@ -146,10 +147,13 @@ suspend fun BufferedImage.find(
                         y + edgePixel.value.second
                     )
                 ) {
-                    incorrectCount++
-                    if (incorrectCount > settings.imageMatchingThreshold) {
+                    errorCount++
+                    consecutiveErrorCount++
+                    if (errorCount > settings.imageMatchingThreshold || consecutiveErrorCount > settings.imageMatchingThreshold) {
                         break@templatePixelLoop
                     }
+                }else{
+                    consecutiveErrorCount = 0
                 }
 
                 // matched all

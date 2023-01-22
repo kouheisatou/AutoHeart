@@ -16,6 +16,7 @@ class Settings {
     @Serializable(with = MutableStateFlowOfAreasSerializer::class)
     val captureArea = MutableStateFlow<Area?>(null)
     val imageMatchingThreshold = 10
+    val consecutiveMatchingErrorThreshold = 2
     val debugMode = true
 
     fun save() {
