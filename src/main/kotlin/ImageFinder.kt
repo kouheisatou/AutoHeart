@@ -1,4 +1,3 @@
-import Application.settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -12,19 +11,15 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.awt.image.BufferedImage
-import java.io.File
-import javax.imageio.ImageIO
 
-class ImageFinder(image: BufferedImage, target: BufferedImage) {
-    private val threshold = target.grayScale().edge().calcBinalizeThreshold()
+class ImageFinder(image: BufferedImage, template: BufferedImage) {
+    private val threshold = template.grayScale().edge().calcBinalizeThreshold()
     val image = image.grayScale().edge().binalized(threshold)
-    val target = target.grayScale().edge().binalized(threshold)
+    val template = template.grayScale().edge().binalized(threshold).toTemplateBufferedImage()
 
     val currentSearchX = mutableStateOf(0)
     val currentSearchY = mutableStateOf(0)
@@ -41,7 +36,7 @@ class ImageFinder(image: BufferedImage, target: BufferedImage) {
 
         CoroutineScope(Dispatchers.IO).launch {
             image.find(
-                target,
+                template,
                 currentSearchCoordinateChanged = { coordinate ->
                     currentSearchX.value = coordinate.first
                     currentSearchY.value = coordinate.second
@@ -83,6 +78,8 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
             }
         }
 
+        Image(bitmap = imageFinder.template.toComposeImageBitmap(), null,)
+
         Box {
             Image(
                 bitmap = imageFinder.image.toComposeImageBitmap(), null,
@@ -112,8 +109,8 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                             (coordinate.first.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp,
                             (coordinate.second.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp,
                         )
-                        .width((imageFinder.target.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp)
-                        .height((imageFinder.target.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp)
+                        .width((imageFinder.template.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp)
+                        .height((imageFinder.template.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp)
                         .background(Color.Red)
                 )
             }

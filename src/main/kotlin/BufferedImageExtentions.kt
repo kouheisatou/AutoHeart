@@ -103,8 +103,8 @@ fun BufferedImage.calcBinalizeThreshold(): Int {
         }
     }
     for (i in distribution.indices) {
-        if(i == max1Index) continue
-        if(max2Index == null || distribution[max2Index] < distribution[i] && distribution[i] < distribution[max1Index!!]){
+        if (i == max1Index) continue
+        if (max2Index == null || distribution[max2Index] < distribution[i] && distribution[i] < distribution[max1Index!!]) {
             max2Index = i
         }
     }
@@ -116,13 +116,13 @@ fun BufferedImage.calcBinalizeThreshold(): Int {
 
 // input binary image only
 suspend fun BufferedImage.find(
-    target: BufferedImage,
+    template: TemplateBufferedImage,
     currentSearchCoordinateChanged: ((coordinate: Pair<Int, Int>) -> Unit)? = null,
     onFindOut: ((coordinate: Pair<Int, Int>) -> Unit)? = null,
     onYChanged: ((y: Int, height: Int) -> Unit)? = null,
     onSearchFinished: ((List<Pair<Int, Int>>) -> Unit)? = null,
 ) {
-    if (type != BufferedImage.TYPE_BYTE_GRAY || target.type != BufferedImage.TYPE_BYTE_GRAY) {
+    if (type != BufferedImage.TYPE_BYTE_GRAY || template.type != BufferedImage.TYPE_BYTE_GRAY) {
         throw ImageConversionException("unsupported image color type : $type")
     }
 
@@ -133,29 +133,29 @@ suspend fun BufferedImage.find(
         for (x in 0 until width) {
 
             // search out of bounds
-            if (x + target.width > width || y + target.height > height) {
+            if (x + template.width > width || y + template.height > height) {
                 continue
             }
             currentSearchCoordinateChanged?.invoke(Pair(x, y))
 
             var incorrectCount = 0
-            targetLoop@ for (targetY in 0 until target.height) {
-                for (targetX in 0 until target.width) {
-
-
-                    // unmatched pixel
-                    if (getRGB(x + targetX, y + targetY) != target.getRGB(targetX, targetY)) {
-                        incorrectCount++
-                        if (incorrectCount > settings.imageMatchingThreshold) {
-                            break@targetLoop
-                        }
+            templatePixelLoop@ for (edgePixel in template.edgePixels.withIndex()) {
+                // unmatched pixel
+                if (template.getRGB(edgePixel.value.first, edgePixel.value.second) != getRGB(
+                        x + edgePixel.value.first,
+                        y + edgePixel.value.second
+                    )
+                ) {
+                    incorrectCount++
+                    if (incorrectCount > settings.imageMatchingThreshold) {
+                        break@templatePixelLoop
                     }
+                }
 
-                    // matched all
-                    if (targetX == target.width - 1 && targetY == target.height - 1) {
-                        result.add(Pair(x, y))
-                        onFindOut?.invoke(Pair(x, y))
-                    }
+                // matched all
+                if (edgePixel.index == template.edgePixels.size - 1) {
+                    result.add(Pair(x, y))
+                    onFindOut?.invoke(Pair(x, y))
                 }
             }
         }
@@ -164,12 +164,24 @@ suspend fun BufferedImage.find(
     onSearchFinished?.invoke(result)
 }
 
-fun BufferedImage.genVectors() {
-
+fun BufferedImage.toTemplateBufferedImage(): TemplateBufferedImage {
+    return TemplateBufferedImage(this)
 }
 
-class TemplateBufferedImage(width: Int, height: Int, imageType: Int) : BufferedImage(width, height, imageType) {
+class TemplateBufferedImage(width: Int, height: Int) : BufferedImage(width, height, TYPE_BYTE_GRAY) {
+    val edgePixels = mutableListOf<Pair<Int, Int>>()
 
+    constructor(bufferedImage: BufferedImage) : this(bufferedImage.width, bufferedImage.height) {
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                setRGB(x, y, bufferedImage.getRGB(x, y))
+                if (getRGB(x, y) != 0) {
+                    edgePixels.add(Pair(x, y))
+                }
+            }
+        }
+//        println(edgePixels)
+    }
 }
 
 class ImageConversionException(msg: String) : Exception(msg)
