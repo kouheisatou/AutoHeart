@@ -83,6 +83,7 @@ suspend fun BufferedImage.find(
     target: BufferedImage,
     currentSearchCoordinateChanged: ((coordinate: Pair<Int, Int>) -> Unit)? = null,
     onFindOut: ((coordinate: Pair<Int, Int>) -> Unit)? = null,
+    onYChanged: ((y: Int, height: Int) -> Unit)? = null,
     onSearchFinished: ((List<Pair<Int, Int>>) -> Unit)? = null,
 ) {
     if (type != BufferedImage.TYPE_BYTE_GRAY || target.type != BufferedImage.TYPE_BYTE_GRAY) {
@@ -91,19 +92,20 @@ suspend fun BufferedImage.find(
 
     val result = mutableListOf<Pair<Int, Int>>()
 
-    for (x in 0 until width) {
-        for (y in 0 until height) {
+    for (y in 0 until height) {
+        onYChanged?.invoke(y, height)
+        for (x in 0 until width) {
 
             // search out of bounds
             if (x + target.width > width || y + target.height > height) {
                 continue
             }
+            currentSearchCoordinateChanged?.invoke(Pair(x, y))
 
             var incorrectCount = 0
-            targetLoop@ for (targetX in 0 until target.width) {
-                for (targetY in 0 until target.height) {
+            targetLoop@ for (targetY in 0 until target.height) {
+                for (targetX in 0 until target.width) {
 
-                    currentSearchCoordinateChanged?.invoke(Pair(x + targetX, y + targetY))
 
                     // unmatched pixel
                     if (getRGB(x + targetX, y + targetY) != target.getRGB(targetX, targetY)) {

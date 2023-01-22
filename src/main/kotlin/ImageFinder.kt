@@ -32,8 +32,13 @@ class ImageFinder(image: BufferedImage, target: BufferedImage) {
     val searchResult = mutableStateListOf<Pair<Int, Int>>()
 
     var searching = mutableStateOf(false)
+    var percentage = mutableStateOf(0)
     fun startSearching() {
+        if(searching.value){
+            return
+        }
         searching.value = true
+
         CoroutineScope(Dispatchers.IO).launch {
             image.find(
                 target,
@@ -44,6 +49,9 @@ class ImageFinder(image: BufferedImage, target: BufferedImage) {
                 onFindOut = { coordinate ->
                     searchResult.add(coordinate)
                     println(coordinate)
+                },
+                onYChanged = {y, height ->
+                    percentage.value = y * 100 / height
                 },
                 onSearchFinished = { result ->
                     println(result)
@@ -64,10 +72,11 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
             Button(
                 onClick = {
                     imageFinder.startSearching()
-                }
+                },
+                enabled = !imageFinder.searching.value
             ) {
                 if (imageFinder.searching.value) {
-                    Text("Searching...")
+                    Text("Searching...  ${imageFinder.percentage.value}%")
                 } else {
                     Text("Start")
                 }
