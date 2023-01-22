@@ -1,5 +1,12 @@
 import Application.settings
 import java.awt.image.BufferedImage
+import java.io.File
+import java.lang.Math.pow
+import java.lang.StringBuilder
+import kotlin.math.abs
+import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 fun BufferedImage.binalized(threshold: Int = calcBinalizeThreshold()): BufferedImage {
 
@@ -82,15 +89,17 @@ fun BufferedImage.calcBinalizeThreshold(): Int {
 suspend fun BufferedImage.find(
     target: BufferedImage,
     currentSearchCoordinateChanged: ((coordinate: Pair<Int, Int>) -> Unit)? = null,
-    onFindOut: ((coordinate: Pair<Int, Int>) -> Unit)? = null,
     onYChanged: ((y: Int, height: Int) -> Unit)? = null,
-    onSearchFinished: ((List<Pair<Int, Int>>) -> Unit)? = null,
+    onSearchFinished: ((rMap: BufferedImage) -> Unit)? = null,
 ) {
     if (type != BufferedImage.TYPE_BYTE_GRAY || target.type != BufferedImage.TYPE_BYTE_GRAY) {
         throw ImageConversionException("unsupported image color type : $type")
     }
 
-    val result = mutableListOf<Pair<Int, Int>>()
+    val rMap = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
+    val r = Array(height) { Array(width) { 0.0 } }
+    var minR: Double? = null
+    var maxR: Double? = null
 
     for (y in 0 until height) {
         onYChanged?.invoke(y, height)
@@ -102,30 +111,57 @@ suspend fun BufferedImage.find(
             }
             currentSearchCoordinateChanged?.invoke(Pair(x, y))
 
-            var incorrectCount = 0
-            targetLoop@ for (targetY in 0 until target.height) {
+            var imageSum = 0
+            var squaredImageSum = 0
+            var targetSum = 0
+            var squaredTargetSum = 0
+            var covariance = 0
+            for (targetY in 0 until target.height) {
                 for (targetX in 0 until target.width) {
-
-
-                    // unmatched pixel
-                    if (getRGB(x + targetX, y + targetY) != target.getRGB(targetX, targetY)) {
-                        incorrectCount++
-                        if (incorrectCount > settings.imageMatchingThreshold) {
-                            break@targetLoop
-                        }
-                    }
-
-                    // matched all
-                    if (targetX == target.width - 1 && targetY == target.height - 1) {
-                        result.add(Pair(x, y))
-                        onFindOut?.invoke(Pair(x, y))
-                    }
+                    val imageColor = getRGB(x + targetX, y + targetY)
+                    val targetColor = target.getRGB(targetX, targetY)
+                    imageSum += imageColor
+                    squaredImageSum += imageColor * imageColor
+                    targetSum += targetColor
+                    squaredTargetSum += targetColor * targetColor
+                    covariance += imageColor * targetColor
                 }
+            }
+            r[y][x] =
+                (target.width * target.height * covariance - imageSum * targetSum) / sqrt(
+                    (
+                            target.width.toDouble() * target.height.toDouble() * squaredImageSum.toDouble() - imageSum.toDouble().pow(2.0)
+                            ) * (target.width.toDouble() * target.height.toDouble() * squaredTargetSum.toDouble() - targetSum.toDouble().pow(2.0))
+                )
+            r[y][x]=if(r[y][x].isNaN()){0.0}else{r[y][x]}
+
+            if (minR == null || minR > r[y][x]) {
+                minR = r[y][x]
+            }
+            if (maxR == null || maxR < r[y][x]) {
+                maxR = r[y][x]
             }
         }
     }
 
-    onSearchFinished?.invoke(result)
+    val csvString = StringBuilder()
+    for(y in r.indices){
+        for(x in 0 until r[y].size){
+            val alpha = ((r[y][x] - minR!!) / abs(minR - maxR!!) * 0xff).toInt()
+            val color = alpha shl 24
+            rMap.setRGB(x, y, color)
+
+            csvString.append(alpha)
+            if(x != r[y].size-1){
+                csvString.append(",")
+            }else{
+                csvString.append("\n")
+            }
+        }
+    }
+
+    File("./out.csv").writeText(csvString.toString())
+    onSearchFinished?.invoke(rMap)
 }
 
 class ImageConversionException(msg: String) : Exception(msg)

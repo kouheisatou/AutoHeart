@@ -22,14 +22,13 @@ import java.io.File
 import javax.imageio.ImageIO
 
 class ImageFinder(image: BufferedImage, target: BufferedImage) {
-    private val threshold = target.grayScale().calcBinalizeThreshold()
-    val image = image.grayScale().binalized(threshold)
-    val target = target.grayScale().binalized(threshold)
+//    private val threshold = target.grayScale().calcBinalizeThreshold()
+    val image = image.grayScale()
+    val target = target.grayScale()
+    val rMap = mutableStateOf<BufferedImage?>(null)
 
     val currentSearchX = mutableStateOf(0)
     val currentSearchY = mutableStateOf(0)
-
-    val searchResult = mutableStateListOf<Pair<Int, Int>>()
 
     var searching = mutableStateOf(false)
     var percentage = mutableStateOf(0)
@@ -46,15 +45,11 @@ class ImageFinder(image: BufferedImage, target: BufferedImage) {
                     currentSearchX.value = coordinate.first
                     currentSearchY.value = coordinate.second
                 },
-                onFindOut = { coordinate ->
-                    searchResult.add(coordinate)
-                    println(coordinate)
-                },
                 onYChanged = {y, height ->
                     percentage.value = y * 100 / height
                 },
                 onSearchFinished = { result ->
-                    println(result)
+                    rMap.value = result
                     searching.value = false
                 },
             )
@@ -91,6 +86,11 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                         imageSize = it
                     }
             )
+            if(imageFinder.rMap.value != null){
+                Image(
+                    bitmap = imageFinder.rMap.value!!.toComposeImageBitmap(), null,
+                )
+            }
 
             // current searching point
             Box(
@@ -103,20 +103,6 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                     .height(3.dp)
                     .background(Color.Red)
             )
-
-            // search result point
-            for (coordinate in imageFinder.searchResult) {
-                Box(
-                    modifier = Modifier
-                        .offset(
-                            (coordinate.first.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp,
-                            (coordinate.second.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp,
-                        )
-                        .width((imageFinder.target.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp)
-                        .height((imageFinder.target.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp)
-                        .background(Color.Red)
-                )
-            }
         }
     }
 }
