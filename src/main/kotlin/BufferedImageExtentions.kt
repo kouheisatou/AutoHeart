@@ -79,10 +79,10 @@ fun BufferedImage.calcBinalizeThreshold(): Int {
     return (max1Index + max2Index) / 2
 }
 
-fun BufferedImage.find(
+suspend fun BufferedImage.find(
     target: BufferedImage,
-    currentSearchCoordinateChanged: ((x: Int, y: Int) -> Unit)? = null,
-    onFindOut: ((x: Int, y: Int) -> Unit)? = null,
+    currentSearchCoordinateChanged: ((coordinate: Pair<Int, Int>) -> Unit)? = null,
+    onFindOut: ((coordinate: Pair<Int, Int>) -> Unit)? = null,
     onSearchFinished: ((List<Pair<Int, Int>>) -> Unit)? = null,
 ) {
     if (type != BufferedImage.TYPE_BYTE_GRAY || target.type != BufferedImage.TYPE_BYTE_GRAY) {
@@ -103,7 +103,7 @@ fun BufferedImage.find(
             targetLoop@ for (targetX in 0 until target.width) {
                 for (targetY in 0 until target.height) {
 
-                    currentSearchCoordinateChanged?.invoke(x + targetX, y + targetY)
+                    currentSearchCoordinateChanged?.invoke(Pair(x + targetX, y + targetY))
 
                     // unmatched pixel
                     if (getRGB(x + targetX, y + targetY) != target.getRGB(targetX, targetY)) {
@@ -116,7 +116,7 @@ fun BufferedImage.find(
                     // matched all
                     if (targetX == target.width - 1 && targetY == target.height - 1) {
                         result.add(Pair(x, y))
-                        onFindOut?.invoke(x, y)
+                        onFindOut?.invoke(Pair(x, y))
                     }
                 }
             }

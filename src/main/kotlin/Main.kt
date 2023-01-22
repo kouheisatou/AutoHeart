@@ -1,3 +1,4 @@
+import Application.imageFinder
 import Application.isCaptureAreaSelectorWindowOpened
 import Application.isSettingWindowOpened
 import Application.settings
@@ -33,6 +34,10 @@ object Application {
     val isSettingWindowOpened = mutableStateOf(false)
     var settings = Settings()
     val jsonFormatter = Json { encodeDefaults = true }
+    val imageFinder = ImageFinder(
+        ImageIO.read(File("./src/main/resources/sample.png")),
+        ImageIO.read(File("./src/main/resources/hart.png"))
+    )
 
     init {
         settings = settings.load()
@@ -66,23 +71,7 @@ fun main() {
             if (settings.captureArea.value != null) {
                 // main window layout
 
-                val image = ImageIO.read(File("./src/main/resources/sample.png"))
-                val target = ImageIO.read(File("./src/main/resources/hart.png"))
-
-                val grayImage = image.grayScale()
-                val grayTarget = target.grayScale()
-
-                val imageBinalizeThreshold = target.grayScale().calcBinalizeThreshold()
-                println("threshold=$imageBinalizeThreshold")
-                val binImage = grayImage.binalized(imageBinalizeThreshold)
-                val binTarget = grayTarget.binalized(imageBinalizeThreshold)
-
-                Image(
-                    bitmap = image.toComposeImageBitmap(), null,
-                )
-                var coordinates: List<Pair<Int, Int>> = mutableListOf()
-                binImage.find(binTarget, onSearchFinished = {result -> coordinates = result})
-                println(coordinates)
+                ImageFinderComponent(imageFinder)
             } else {
                 Column {
                     Text("文字認識領域と自動クリック領域を設定してください")
