@@ -19,13 +19,13 @@ import java.util.Calendar
 
 class ImageFinder(image: BufferedImage, template: BufferedImage) {
     private val threshold = template.grayScale().edge().calcBinalizeThreshold()
-    val image = image.grayScale().edge().binalized(threshold)
-    val template = template.grayScale().edge().binalized(threshold).toTemplateBufferedImage()
+    val image = BinaryImage(image, threshold)
+    val template = BinaryImage(template, threshold)
 
     val currentSearchX = mutableStateOf(0)
     val currentSearchY = mutableStateOf(0)
 
-    val searchResult = mutableStateListOf<Pair<Int, Int>>()
+    val searchResult = mutableStateListOf<Vector>()
 
     var searching = mutableStateOf(false)
     var percentage = mutableStateOf(0)
@@ -42,15 +42,12 @@ class ImageFinder(image: BufferedImage, template: BufferedImage) {
             image.find(
                 template,
                 currentSearchCoordinateChanged = { coordinate ->
-                    currentSearchX.value = coordinate.first
-                    currentSearchY.value = coordinate.second
+                    currentSearchX.value = coordinate.x
+                    currentSearchY.value = coordinate.y
                 },
                 onFindOut = { coordinate ->
                     searchResult.add(coordinate)
                     println(coordinate)
-                },
-                onYChanged = { y, height ->
-                    percentage.value = y * 100 / height
                 },
                 onSearchFinished = { result ->
                     println(result)
@@ -86,11 +83,11 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
             }
         }
 
-        Image(bitmap = imageFinder.template.toComposeImageBitmap(), null)
+        Image(bitmap = imageFinder.template.toBufferedImage().toComposeImageBitmap(), null)
 
         Box {
             Image(
-                bitmap = imageFinder.image.toComposeImageBitmap(), null,
+                bitmap = imageFinder.image.toBufferedImage().toComposeImageBitmap(), null,
                 modifier = Modifier
                     .onSizeChanged {
                         imageSize = it
@@ -114,12 +111,14 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                 Box(
                     modifier = Modifier
                         .offset(
-                            (coordinate.first.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp,
-                            (coordinate.second.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp,
+                            (coordinate.x.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp,
+                            (coordinate.y.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp,
                         )
-                        .width((imageFinder.template.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp)
-                        .height((imageFinder.template.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp)
-                        .background(Color.Red)
+                        .width(3.dp)
+                        .height(3.dp)
+//                        .width((imageFinder.template.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp)
+//                        .height((imageFinder.template.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp)
+                        .background(Color.Green)
                 )
             }
         }
