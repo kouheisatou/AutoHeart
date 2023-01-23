@@ -114,4 +114,15 @@ fun BufferedImage.calcBinalizeThreshold(): Int {
     return (max1Index!! + max2Index!!) / 2
 }
 
+fun BufferedImage.flipXY(): BufferedImage {
+    val result = BufferedImage(width, height, type)
+
+    for (x in 0 until width) {
+        for (y in 0 until height) {
+            result.setRGB(width - 1 - x, height - 1 - y, getRGB(x, y))
+        }
+    }
+    return result
+}
+
 class ImageConversionException(msg: String) : Exception(msg)

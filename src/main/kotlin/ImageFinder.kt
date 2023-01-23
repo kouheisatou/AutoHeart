@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.awt.image.BufferedImage
+import java.io.File
 import java.util.Calendar
 
 class ImageFinder(image: BufferedImage, template: BufferedImage) {
@@ -41,18 +42,15 @@ class ImageFinder(image: BufferedImage, template: BufferedImage) {
         CoroutineScope(Dispatchers.IO).launch {
             image.find(
                 template,
-                currentSearchCoordinateChanged = { coordinate ->
+                currentSearchCoordinateChanged = { coordinate, p ->
                     currentSearchX.value = coordinate.x
                     currentSearchY.value = coordinate.y
-                },
-                onFindOut = { coordinate ->
-                    searchResult.add(coordinate)
-                    println(coordinate)
+                    percentage.value = p
                 },
                 onSearchFinished = { result ->
-                    println(result)
                     searching.value = false
                     processingTime.value = Calendar.getInstance().timeInMillis - startTime
+                    arrayToCSV(result, File("./out.csv"))
                 },
             )
         }

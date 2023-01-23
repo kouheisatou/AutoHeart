@@ -1,4 +1,3 @@
-import Application.settings
 import java.awt.image.BufferedImage
 
 const val BLACK = false
@@ -6,20 +5,20 @@ const val WHITE = true
 const val BLACK_3BYTE = 0x000000
 const val WHITE_3BYTE = 0xffffff
 
-class BinaryImage(bufferedImage: BufferedImage, threshold: Int = bufferedImage.calcBinalizeThreshold()) {
+open class BinaryImage(bufferedImage: BufferedImage, threshold: Int = bufferedImage.calcBinalizeThreshold()) {
 
 
     private val bitmap = Array(bufferedImage.width * bufferedImage.height) { BLACK }
-    val whitePixels: Array<BinaryPixel>
-    val representativePixel: BinaryPixel
+    val whitePixels: Array<Vector>
+    val representativePixel: Vector
 
     val width = bufferedImage.width
     val height = bufferedImage.height
 
     init {
         val edgedImage = bufferedImage.grayScale().edge()
-        val whitePixels = mutableListOf<BinaryPixel>()
-        var representativePixel: BinaryPixel? = null
+        val whitePixels = mutableListOf<Vector>()
+        var representativePixel: Vector? = null
 
         for (x in 0 until edgedImage.width) {
             for (y in 0 until edgedImage.height) {
@@ -29,11 +28,11 @@ class BinaryImage(bufferedImage: BufferedImage, threshold: Int = bufferedImage.c
                 val b = color and 0xff
                 if ((r + g + b) / 3 > threshold) {
                     if (representativePixel == null) {
-                        representativePixel = BinaryPixel(Vector(x, y), WHITE, null)
+                        representativePixel = Vector(x, y)
                     }
 
                     setColorAt(x, y, WHITE)
-                    whitePixels.add(BinaryPixel(Vector(x, y), WHITE, representativePixel))
+                    whitePixels.add(Vector(x, y))
                 }
             }
         }
@@ -46,14 +45,16 @@ class BinaryImage(bufferedImage: BufferedImage, threshold: Int = bufferedImage.c
     fun getColorAt(x: Int, y: Int): Boolean {
         return bitmap[y * width + x]
     }
-    fun getColorAt(coordinate: Vector): Boolean{
+
+    fun getColorAt(coordinate: Vector): Boolean {
         return getColorAt(coordinate.x, coordinate.y)
     }
 
     fun setColorAt(x: Int, y: Int, color: Boolean) {
         bitmap[y * width + x] = color
     }
-    fun setColorAt(coordinate: Vector, color: Boolean){
+
+    fun setColorAt(coordinate: Vector, color: Boolean) {
         setColorAt(coordinate.x, coordinate.y, color)
     }
 
@@ -71,41 +72,37 @@ class BinaryImage(bufferedImage: BufferedImage, threshold: Int = bufferedImage.c
         return bi
     }
 
+    fun rotate180() {
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                val temp = getColorAt(x, y)
+                setColorAt(x, y, getColorAt(width - 1 - x, height - 1 - y))
+                setColorAt(width - 1 - x, height - 1 - y, temp)
+            }
+        }
+    }
+
     fun find(
         templateImage: BinaryImage,
-        currentSearchCoordinateChanged: ((coordinate: Vector) -> Unit)? = null,
-        onFindOut: ((coordinate: Vector) -> Unit)? = null,
-        onSearchFinished: ((result: List<Vector>) -> Unit)? = null,
+        currentSearchCoordinateChanged: ((coordinate: Vector, percentage: Int) -> Unit)? = null,
+        onSearchFinished: ((result: Array<Array<Int>>) -> Unit)? = null,
     ) {
-        val matchedPixels = mutableListOf<BinaryPixel>()
-        for (whitePixel in whitePixels) {
-            currentSearchCoordinateChanged?.invoke(whitePixel.coordinate)
-            var pixelMatchErrorCount = 0
-            for(templateWhitePixel in templateImage.whitePixels.withIndex()){
+        templateImage.rotate180()
 
-                val representativePixelCoordinate = whitePixel.coordinate - templateWhitePixel.value.relativeVectorFromRepresentativePixel
-                if(representativePixelCoordinate.x < 0 || representativePixelCoordinate.y < 0) continue
-                if(getColorAt(representativePixelCoordinate) != templateImage.getColorAt(templateImage.representativePixel.coordinate)){
-                    pixelMatchErrorCount++
-                    if(pixelMatchErrorCount > settings.imageMatchingThreshold){
-                        break
-                    }
+        // row:y, column:x
+        val result = Array(height) { Array(width) { 0 } }
+        for (whitePixel in whitePixels.withIndex()) {
+            currentSearchCoordinateChanged?.invoke(whitePixel.value, whitePixel.index * 100 / whitePixels.size)
 
-                    if(templateWhitePixel.index == templateImage.whitePixels.size-1){
-                        matchedPixels.add(whitePixel)
-                        onFindOut?.invoke(whitePixel.coordinate)
-                    }
+            for (templateWhitePixel in templateImage.whitePixels) {
+                val x = whitePixel.value.x - templateImage.representativePixel.x + templateWhitePixel.x
+                val y = whitePixel.value.y - templateImage.representativePixel.y + templateWhitePixel.y
+                if ((y in 0 until height) && (x in 0 until width)) {
+                    result[y][x]++
                 }
             }
         }
 
-        var xSum = 0
-        var ySum = 0
-        for(pixel in matchedPixels){
-            xSum += pixel.coordinate.x
-            ySum += pixel.coordinate.y
-        }
-        // 1つしか画像内で一致したtemplateを認識できない
-        onSearchFinished?.invoke(listOf(Vector(xSum/matchedPixels.size, ySum/matchedPixels.size)))
+        onSearchFinished?.invoke(result)
     }
 }
