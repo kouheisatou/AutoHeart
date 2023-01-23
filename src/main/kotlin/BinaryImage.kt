@@ -74,7 +74,7 @@ open class BinaryImage(
     fun find(
         templateImage: BinaryImage,
         currentSearchCoordinateChanged: ((coordinate: Vector, percentage: Int) -> Unit)? = null,
-        onSearchFinished: ((result: List<Vector>) -> Unit)? = null,
+        onSearchFinished: ((result: List<Vector>, weightMapAlphaImage: BufferedImage) -> Unit)? = null,
     ) {
         val flippedImage = templateImage.flipped()
 
@@ -98,18 +98,28 @@ open class BinaryImage(
             }
         }
 
+        val weightMapAlphaImage = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
         for (y in weightMap.indices) {
             for (x in weightMap[y].indices) {
+
+                val alpha = 0xff * weightMap[y][x] / maxWeight
+                val red = 0x00
+                val green = 0xff
+                val blue = 0x00
+                val color = (alpha shl 24) + (red shl 16) + (green shl 8) + blue
+                weightMapAlphaImage.setRGB(x,y,color)
+
                 if (weightMap[y][x].toDouble() / maxWeight > settings.detectionAccuracy) {
-                    val templateImageCoordinate = Vector(x, y) - templateImage.representativePixel
-                    if (templateImageCoordinate.x in 0 until width && templateImageCoordinate.y in 0 until height) {
-                        result.add(Vector(templateImageCoordinate.x, templateImageCoordinate.y))
+                    val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
+                    val templateImageCoordinateY = y - templateImage.representativePixel.y
+                    if (templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height) {
+                        result.add(Vector(templateImageCoordinateX, templateImageCoordinateY))
                         println(result.last())
                     }
                 }
             }
         }
-        onSearchFinished?.invoke(result)
+        onSearchFinished?.invoke(result, weightMapAlphaImage)
     }
 }
 
