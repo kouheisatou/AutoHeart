@@ -16,4 +16,8 @@ class Vector(val x: Int, val y: Int) {
     operator fun plus(coordinate: Vector): Vector {
         return Vector(x + coordinate.x, y + coordinate.y)
     }
+
+    override fun toString(): String {
+        return "Vector(x=$x, y=$y)"
+    }
 }

@@ -26,7 +26,7 @@ class ImageFinder(image: BufferedImage, template: BufferedImage) {
     val currentSearchX = mutableStateOf(0)
     val currentSearchY = mutableStateOf(0)
 
-    val searchResult = mutableStateListOf<Vector>()
+    val searchResult = mutableStateOf<List<Vector>?>(null)
 
     var searching = mutableStateOf(false)
     var percentage = mutableStateOf(0)
@@ -48,9 +48,9 @@ class ImageFinder(image: BufferedImage, template: BufferedImage) {
                     percentage.value = p
                 },
                 onSearchFinished = { result ->
+                    searchResult.value = result
                     searching.value = false
                     processingTime.value = Calendar.getInstance().timeInMillis - startTime
-                    arrayToCSV(result, File("./out.csv"))
                 },
             )
         }
@@ -105,17 +105,15 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
             )
 
             // search result point
-            for (coordinate in imageFinder.searchResult) {
+            for (coordinate in imageFinder.searchResult.value ?: listOf()) {
                 Box(
                     modifier = Modifier
                         .offset(
                             (coordinate.x.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp,
                             (coordinate.y.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp,
                         )
-                        .width(3.dp)
-                        .height(3.dp)
-//                        .width((imageFinder.template.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp)
-//                        .height((imageFinder.template.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp)
+                        .width((imageFinder.template.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp)
+                        .height((imageFinder.template.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp)
                         .background(Color.Green)
                 )
             }

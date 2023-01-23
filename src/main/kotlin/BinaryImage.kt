@@ -1,4 +1,6 @@
+import Application.settings
 import java.awt.image.BufferedImage
+import java.io.File
 
 const val BLACK = false
 const val WHITE = true
@@ -57,46 +59,56 @@ open class BinaryImage(
         return bi
     }
 
-    fun clone(): BinaryImage {
-        val copyBitmap = Array(width * height) { BLACK }
-        for (i in bitmap.indices) {
-            copyBitmap[i] = bitmap[i]
-        }
-        return BinaryImage(width, height, copyBitmap)
-    }
-
     private fun flipped(): BinaryImage {
-        val copy = clone()
+
+        val copiedBitmap = Array(width * height) { BLACK }
 
         for (x in 0 until width) {
             for (y in 0 until height) {
-                copy.setColorAt(width - 1 - x, height - 1 - y, getColorAt(x, y))
+                copiedBitmap[y * width + x] = getColorAt(width - 1 - x, height - 1 - y)
             }
         }
-        return copy
+        return BinaryImage(width, height, copiedBitmap)
     }
 
     fun find(
         templateImage: BinaryImage,
         currentSearchCoordinateChanged: ((coordinate: Vector, percentage: Int) -> Unit)? = null,
-        onSearchFinished: ((result: Array<Array<Int>>) -> Unit)? = null,
+        onSearchFinished: ((result: List<Vector>) -> Unit)? = null,
     ) {
-        templateImage.flipped()
+        val flippedImage = templateImage.flipped()
+
+        var maxWeight = 0
+        val result = mutableListOf<Vector>()
 
         // row:y, column:x
-        val result = Array(height) { Array(width) { 0 } }
+        val weightMap = Array(height) { Array(width) { 0 } }
         for (whitePixel in whitePixels.withIndex()) {
             currentSearchCoordinateChanged?.invoke(whitePixel.value, whitePixel.index * 100 / whitePixels.size)
 
-            for (templateWhitePixel in templateImage.whitePixels) {
-                val x = whitePixel.value.x - templateImage.representativePixel.x + templateWhitePixel.x
-                val y = whitePixel.value.y - templateImage.representativePixel.y + templateWhitePixel.y
+            for (templateWhitePixel in flippedImage.whitePixels) {
+                val x = whitePixel.value.x - flippedImage.representativePixel.x + templateWhitePixel.x
+                val y = whitePixel.value.y - flippedImage.representativePixel.y + templateWhitePixel.y
                 if ((y in 0 until height) && (x in 0 until width)) {
-                    result[y][x]++
+                    weightMap[y][x]++
+                    if (maxWeight < weightMap[y][x]) {
+                        maxWeight = weightMap[y][x]
+                    }
                 }
             }
         }
 
+        for (y in weightMap.indices) {
+            for (x in weightMap[y].indices) {
+                if (weightMap[y][x].toDouble() / maxWeight > settings.detectionAccuracy) {
+                    val templateImageCoordinate = Vector(x, y) - templateImage.representativePixel
+                    if (templateImageCoordinate.x in 0 until width && templateImageCoordinate.y in 0 until height) {
+                        result.add(Vector(templateImageCoordinate.x, templateImageCoordinate.y))
+                        println(result.last())
+                    }
+                }
+            }
+        }
         onSearchFinished?.invoke(result)
     }
 }

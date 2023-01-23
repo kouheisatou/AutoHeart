@@ -15,8 +15,7 @@ import java.io.File
 class Settings {
     @Serializable(with = MutableStateFlowOfAreasSerializer::class)
     val captureArea = MutableStateFlow<Area?>(null)
-    val imageMatchingThreshold = 10
-    val consecutiveMatchingErrorThreshold = 2
+    val detectionAccuracy = 0.96
     val debugMode = true
 
     fun save() {
