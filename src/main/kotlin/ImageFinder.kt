@@ -3,6 +3,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
@@ -33,7 +34,7 @@ class ImageFinder(image: BufferedImage, template: BufferedImage) {
     val searchResult = mutableStateOf<List<Vector>?>(null)
 
     var searching = mutableStateOf(false)
-    var percentage = mutableStateOf(0)
+    var percentage = mutableStateOf(0f)
     val processingTime = mutableStateOf<Long?>(null)
 
     fun startSearching() {
@@ -67,6 +68,16 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
 
     Column {
+        LinearProgressIndicator(
+            progress = imageFinder.percentage.value,
+            modifier = Modifier.fillMaxWidth().alpha(
+                if (imageFinder.searching.value) {
+                    1f
+                } else {
+                    0f
+                }
+            )
+        )
 
         Row {
             Button(
@@ -76,7 +87,7 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                 enabled = !imageFinder.searching.value
             ) {
                 if (imageFinder.searching.value) {
-                    Text("Searching...  ${imageFinder.percentage.value}%")
+                    Text("Searching...  ${String.format("%.2f", imageFinder.percentage.value * 100)}%")
                 } else {
                     Text("Start")
                 }
@@ -92,7 +103,10 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                 modifier = Modifier
                     .width(3.dp)
                     .height(3.dp)
-                    .offset(imageFinder.template.representativePixel.x.dp, imageFinder.template.representativePixel.y.dp)
+                    .offset(
+                        imageFinder.template.representativePixel.x.dp,
+                        imageFinder.template.representativePixel.y.dp
+                    )
                     .background(Color.Red)
             )
         }
@@ -123,17 +137,6 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
 
             // search result point
             for (coordinate in imageFinder.searchResult.value ?: listOf()) {
-                Box(
-                    modifier = Modifier
-                        .offset(
-                            (coordinate.x.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp,
-                            (coordinate.y.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp,
-                        )
-                        .width(3.dp)
-                        .height(3.dp)
-                        .background(Color.Green)
-                        .alpha(0.5f)
-                )
                 Box(
                     modifier = Modifier
                         .offset(
