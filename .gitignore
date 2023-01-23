@@ -4,3 +4,4 @@
 /.idea
 /gradle
 /src/main/resources/sample.png
+/out.csv

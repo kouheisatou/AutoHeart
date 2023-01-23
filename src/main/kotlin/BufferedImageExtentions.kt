@@ -59,10 +59,6 @@ fun BufferedImage.edge(): BufferedImage {
 }
 
 fun BufferedImage.grayScale(): BufferedImage {
-    if (type != BufferedImage.TYPE_4BYTE_ABGR) {
-        throw ImageConversionException("unsupported image color type : $type")
-    }
-
     val newImage = BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
     for (x in 0 until this.width) {
         for (y in 0 until this.height) {
@@ -112,17 +108,6 @@ fun BufferedImage.calcBinalizeThreshold(): Int {
 //    println(max1Index)
 //    println(max2Index)
     return (max1Index!! + max2Index!!) / 2
-}
-
-fun BufferedImage.flipXY(): BufferedImage {
-    val result = BufferedImage(width, height, type)
-
-    for (x in 0 until width) {
-        for (y in 0 until height) {
-            result.setRGB(width - 1 - x, height - 1 - y, getRGB(x, y))
-        }
-    }
-    return result
 }
 
 class ImageConversionException(msg: String) : Exception(msg)

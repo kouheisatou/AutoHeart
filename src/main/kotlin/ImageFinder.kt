@@ -20,8 +20,8 @@ import java.util.Calendar
 
 class ImageFinder(image: BufferedImage, template: BufferedImage) {
     private val threshold = template.grayScale().edge().calcBinalizeThreshold()
-    val image = BinaryImage(image, threshold)
-    val template = BinaryImage(template, threshold)
+    val image = convertBufferedImageToBinaryImage(image, threshold)
+    val template = convertBufferedImageToBinaryImage(template, threshold)
 
     val currentSearchX = mutableStateOf(0)
     val currentSearchY = mutableStateOf(0)
