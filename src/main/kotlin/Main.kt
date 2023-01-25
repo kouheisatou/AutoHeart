@@ -67,6 +67,7 @@ fun main() {
                                 Text("画像検索")
                                 TextButton(onClick = {
                                     state.value = MainWindowState.SettingState
+                                    autoClicker?.stop()
                                 }) {
                                     Text("設定に戻る")
                                 }

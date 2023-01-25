@@ -28,7 +28,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
     val capturedImage = mutableStateOf<BufferedImage>(Robot().createScreenCapture(area))
     val weightImageMap = mutableStateOf<BufferedImage?>(null)
 
-    val searchResult = mutableStateOf<List<Vector>?>(null)
+    val searchResult = mutableStateOf<List<Pair<Rectangle, Vector>>?>(null)
 
     var processing = mutableStateOf(false)
     var percentage = mutableStateOf(0f)
@@ -40,12 +40,14 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
         processing.value = true
 
         CoroutineScope(Dispatchers.IO).launch {
+            println("start")
             autoClick()
         }
     }
 
     fun stop() {
         processing.value = false
+        println("stop")
     }
 
     private fun autoClick() {
@@ -135,8 +137,8 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                 Box(
                     modifier = Modifier
                         .offsetMultiResolutionDisplay(
-                            coordinate.x.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
-                            coordinate.y.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
+                            coordinate.first.x.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
+                            coordinate.first.y.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
                             settings.displayScalingFactor,
                         )
                         .widthMultiResolutionDisplay(
@@ -147,7 +149,18 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                             autoClicker.binaryTemplateImage.height.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
                             settings.displayScalingFactor
                         )
-                        .border(width = 1.dp, shape = RectangleShape, color = Color.Green)
+                        .border(width = 1.dp, shape = RectangleShape, color = Color.Red)
+                )
+                Box(
+                    modifier = Modifier
+                        .width(3.dp)
+                        .height(3.dp)
+                        .offsetMultiResolutionDisplay(
+                            coordinate.second.x.toFloat(),
+                            coordinate.second.y.toFloat(),
+                            settings.displayScalingFactor,
+                        )
+                        .background(Color.Red)
                 )
             }
         }

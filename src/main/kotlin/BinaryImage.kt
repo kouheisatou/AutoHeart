@@ -1,4 +1,5 @@
 import Application.settings
+import java.awt.Rectangle
 import java.awt.image.BufferedImage
 import java.io.File
 
@@ -33,16 +34,8 @@ open class BinaryImage(
         return bitmap[y * width + x]
     }
 
-    fun getColorAt(coordinate: Vector): Boolean {
-        return getColorAt(coordinate.x, coordinate.y)
-    }
-
     fun setColorAt(x: Int, y: Int, color: Boolean) {
         bitmap[y * width + x] = color
-    }
-
-    fun setColorAt(coordinate: Vector, color: Boolean) {
-        setColorAt(coordinate.x, coordinate.y, color)
     }
 
     fun toBufferedImage(): BufferedImage {
@@ -74,12 +67,14 @@ open class BinaryImage(
     fun find(
         templateImage: BinaryImage,
         currentSearchCoordinateChanged: ((coordinate: Vector, progress: Float) -> Unit)? = null,
-        onSearchFinished: ((result: List<Vector>, weightMapAlphaImage: BufferedImage) -> Unit)? = null,
+        onSearchFinished: ((result: List<Pair<Rectangle, Vector>>, weightMapAlphaImage: BufferedImage) -> Unit)? = null,
     ) {
         val flippedImage = templateImage.flipped()
 
         var maxWeight = 0
-        val result = mutableListOf<Vector>()
+        // first: bounding box
+        // second: representative point coordinate
+        val result = mutableListOf<Pair<Rectangle, Vector>>()
 
         // row:y, column:x
         val weightMap = Array(height) { Array(width) { 0 } }
@@ -107,22 +102,31 @@ open class BinaryImage(
                 val green = 0xff
                 val blue = 0x00
                 val color = (alpha shl 24) + (red shl 16) + (green shl 8) + blue
-                weightMapAlphaImage.setRGB(x,y,color)
+                weightMapAlphaImage.setRGB(x, y, color)
 
                 if (weightMap[y][x].toDouble() / maxWeight > settings.detectionAccuracy) {
                     val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
-                    val templateImageCoordinateY = y - templateImage.representativePixel.y
+                    val templateImageCoordinateY = y - (templateImage.height - templateImage.representativePixel.y)
                     if (templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height) {
 
                         var alreadyRegistered = false
-                        for(coordinate in result){
-                            if(templateImageCoordinateX in coordinate.x .. coordinate.x + templateImage.width && templateImageCoordinateY in coordinate.y .. coordinate.y + templateImage.height){
+                        for (coordinate in result) {
+                            if (templateImageCoordinateX in coordinate.first.x..coordinate.first.x + templateImage.width && templateImageCoordinateY in coordinate.first.y..coordinate.first.y + templateImage.height) {
                                 alreadyRegistered = true
                             }
                         }
 
                         if (!alreadyRegistered) {
-                            result.add(Vector(templateImageCoordinateX, templateImageCoordinateY))
+                            result.add(
+                                Pair(
+                                    Rectangle(
+                                        templateImageCoordinateX,
+                                        templateImageCoordinateY,
+                                        templateImage.width,
+                                        templateImage.height
+                                    ), Vector(x, y),
+                                ),
+                            )
                             println(result.last())
                         }
                     }
