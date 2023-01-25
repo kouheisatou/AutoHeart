@@ -93,7 +93,7 @@ open class BinaryImage(
             }
         }
 
-        val weightMapAlphaImage = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        val weightMapAlphaImage = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
         for (y in weightMap.indices) {
             for (x in weightMap[y].indices) {
 
@@ -127,6 +127,7 @@ open class BinaryImage(
                                     ), Vector(x, y),
                                 ),
                             )
+                            println(weightMap[y][x].toDouble() / templateImage.whitePixels.size)
                             println(result.last())
                         }
                     }

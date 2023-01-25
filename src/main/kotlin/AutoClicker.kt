@@ -75,17 +75,14 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
 
     Column {
-        Box {
-            LinearProgressIndicator(
-                progress = if (autoClicker.processing.value) {
-                    autoClicker.percentage.value
-                } else {
-                    0f
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text("${String.format("%.2f", autoClicker.percentage.value * 100)}%")
-        }
+        LinearProgressIndicator(
+            progress = if (autoClicker.processing.value) {
+                autoClicker.percentage.value
+            } else {
+                0f
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Row {
             Button(

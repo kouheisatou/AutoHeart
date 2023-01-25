@@ -25,7 +25,7 @@ class Settings {
     val templateArea = MutableStateFlow<Rectangle?>(null)
     @Transient
     val displayScalingFactor = getDisplayScalingFactor()
-    val detectionAccuracy = 0.80
+    val detectionAccuracy = 0.96
     val debugMode = true
 
     fun save() {

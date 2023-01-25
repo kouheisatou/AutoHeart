@@ -167,19 +167,6 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                         .border(1.dp, color = Color.Red)
                 )
             }
-            Text(
-                text = "($mouseX,$mouseY)\n(${areaSelector.screenSize.width * mouseX!! / imageSize.width},${areaSelector.screenSize.height * mouseY!! / imageSize.height})",
-            )
-            Text(
-                text = "($mouseX,$mouseY)\n(${areaSelector.screenSize.width * mouseX!! / imageSize.width},${areaSelector.screenSize.height * mouseY!! / imageSize.height})",
-                modifier = Modifier
-                    .offsetMultiResolutionDisplay(
-                        x = mouseX!!,
-                        y = mouseY!!,
-                        settings.displayScalingFactor
-                    )
-                    .background(color = Color.White)
-            )
         }
     }
 }
