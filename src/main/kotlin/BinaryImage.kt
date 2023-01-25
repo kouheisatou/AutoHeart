@@ -125,7 +125,7 @@ open class BinaryImage(
 
 fun convertBufferedImageToBinaryImage(
     bufferedImage: BufferedImage,
-    threshold: Int = bufferedImage.calcBinalizeThreshold()
+    threshold: Int
 ): BinaryImage {
 
     val bitMap = Array(bufferedImage.width * bufferedImage.height) { BLACK }

@@ -78,7 +78,6 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                         areaSelector.screenSize.height.toFloat() / areaSelector.screenSize.width.toFloat() * window.width.toFloat()
                     }.dp
                 )
-                .background(Color.Red)
                 .onPointerEvent(PointerEventType.Move) {
                     val position = it.changes.first().position
                     mouseX = if (position.x < 0) {

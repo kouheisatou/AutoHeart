@@ -1,4 +1,4 @@
-import Application.imageFinder
+import Application.autoClicker
 import Application.settings
 import Application.state
 import androidx.compose.foundation.Image
@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.serialization.json.Json
-import java.awt.Robot
 import java.awt.image.BufferedImage
 import kotlin.system.exitProcess
 
@@ -21,7 +20,7 @@ import kotlin.system.exitProcess
 object Application {
     var settings = Settings()
     val jsonFormatter = Json { encodeDefaults = true }
-    var imageFinder: ImageFinder? = null
+    var autoClicker: AutoClicker? = null
     val state: MutableState<MainWindowState> = mutableStateOf(MainWindowState.SettingState)
 
     init {
@@ -55,8 +54,8 @@ fun main() {
                 is MainWindowState.ImageFinderState -> {
                     if (settings.captureArea.value != null && settings.templateArea.value != null && captureAreaImage != null && templateAreaImage != null) {
                         // main window layout
-                        imageFinder = ImageFinder(
-                            captureAreaImage!!,
+                        autoClicker = AutoClicker(
+                            settings.captureArea.value!!,
                             templateAreaImage!!,
                         )
                         Column {
@@ -72,7 +71,7 @@ fun main() {
                                     Text("設定に戻る")
                                 }
                             }
-                            ImageFinderComponent(imageFinder!!)
+                            AutoClickerComponent(autoClicker!!)
                         }
                     } else {
                         state.value = MainWindowState.ErrorState
