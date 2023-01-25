@@ -150,7 +150,6 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                         .widthMultiResolutionDisplay(imageFinder.template.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width, settings.displayScalingFactor)
                         .heightMultiResolutionDisplay(imageFinder.template.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height, settings.displayScalingFactor)
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Green)
-                        .alpha(0.7f)
                 )
             }
         }

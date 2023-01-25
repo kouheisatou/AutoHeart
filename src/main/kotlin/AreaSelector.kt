@@ -26,7 +26,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 
-abstract class AreaSelector {
+class AreaSelector(val onCloseRequest: () -> Unit, val onSelected: (area: Rectangle) -> Unit) {
     val screenShot: BufferedImage
     val mode = mutableStateOf(AreaSelectorState.Hovering)
     val screenSize: Rectangle
@@ -36,10 +36,6 @@ abstract class AreaSelector {
         screenSize = Rectangle(Toolkit.getDefaultToolkit().screenSize)
         screenShot = robot.createScreenCapture(screenSize)
     }
-
-    abstract fun onCloseRequest()
-
-    abstract fun onSelected(area: Area)
 }
 
 enum class AreaSelectorState {
@@ -48,19 +44,17 @@ enum class AreaSelectorState {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun AreaSelectorWindow(areaSelector: AreaSelector) {
+fun AreaSelectorWindow(areaSelector: AreaSelector, windowTitle: String) {
     var mouseX by remember { mutableStateOf<Float?>(null) }
     var mouseY by remember { mutableStateOf<Float?>(null) }
     var areaStartX by remember { mutableStateOf<Float?>(null) }
     var areaStartY by remember { mutableStateOf<Float?>(null) }
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
 
-    Window(onCloseRequest = { areaSelector.onCloseRequest() }) {
-        Image(
-            bitmap = areaSelector.screenShot.toComposeImageBitmap(),
+    Window(onCloseRequest = { areaSelector.onCloseRequest() }, title = windowTitle) {
+        Image(bitmap = areaSelector.screenShot.toComposeImageBitmap(),
             null,
-            modifier = Modifier
-                .onPointerEvent(PointerEventType.Move) {
+            modifier = Modifier.onPointerEvent(PointerEventType.Move) {
                     val position = it.changes.first().position
                     mouseX = if (position.x < 0) {
                         0f
@@ -76,8 +70,7 @@ fun AreaSelectorWindow(areaSelector: AreaSelector) {
                     } else {
                         position.y
                     }
-                }
-                .onPointerEvent(PointerEventType.Press) {
+                }.onPointerEvent(PointerEventType.Press) {
                     areaSelector.mode.value = AreaSelectorState.Dragging
 
                     mouseX = null
@@ -88,48 +81,50 @@ fun AreaSelectorWindow(areaSelector: AreaSelector) {
                     val position = it.changes.first().position
                     areaStartX = position.x
                     areaStartY = position.y
-                }
-                .onPointerEvent(PointerEventType.Release) {
+                }.onPointerEvent(PointerEventType.Release) {
                     areaSelector.mode.value = AreaSelectorState.Hovering
                     val position = it.changes.first().position
 
                     if (areaStartX != null && areaStartY != null) {
+                        val x1 = (areaSelector.screenSize.width * min(
+                            max(position.x, 0f), imageSize.width.toFloat()
+                        ) / imageSize.width).toInt()
+                        val y1 = (areaSelector.screenSize.height * min(
+                            max(position.y, 0f), imageSize.height.toFloat()
+                        ) / imageSize.height).toInt()
+                        val x2 = (areaSelector.screenSize.width * min(
+                            max(areaStartX!!, 0f), imageSize.width.toFloat()
+                        ) / imageSize.width).toInt()
+                        val y2 = (areaSelector.screenSize.height * min(
+                            max(areaStartY!!, 0f), imageSize.height.toFloat()
+                        ) / imageSize.height).toInt()
                         areaSelector.onSelected(
-                            Area(
-                                (areaSelector.screenSize.width * min(max(position.x, 0f), imageSize.width.toFloat()) / imageSize.width).toInt(),
-                                (areaSelector.screenSize.height * min(max(position.y, 0f), imageSize.height.toFloat()) / imageSize.height).toInt(),
-                                (areaSelector.screenSize.width * min(max(areaStartX!!, 0f), imageSize.width.toFloat()) / imageSize.width).toInt(),
-                                (areaSelector.screenSize.height * min(max(areaStartY!!, 0f), imageSize.height.toFloat()) / imageSize.height).toInt(),
-                            )
+                            Rectangle(min(x1, x2), min(y1, y2), abs(x1 - x2), abs(y1 - y2))
                         )
+                        areaSelector.onCloseRequest()
                     }
-                }
-                .onSizeChanged {
+                }.onSizeChanged {
                     imageSize = it
-                }
-        )
+                })
         if (mouseX != null && mouseY != null) {
 
             Divider(
                 color = Color.Red,
                 thickness = 1.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
                     .offsetMultiResolutionDisplay(x = null, y = mouseY!!, settings.displayScalingFactor)
             )
             Divider(
                 color = Color.Red,
                 thickness = 1.dp,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(1.dp)
+                modifier = Modifier.fillMaxHeight().width(1.dp)
                     .offsetMultiResolutionDisplay(x = mouseX!!, y = null, settings.displayScalingFactor)
             )
             if (areaSelector.mode.value == AreaSelectorState.Dragging && areaStartX != null && areaStartY != null) {
                 Box(
-                    modifier = Modifier
-                        .offsetMultiResolutionDisplay(min(areaStartX!!, mouseX!!), min(areaStartY!!, mouseY!!), settings.displayScalingFactor)
-                        .widthMultiResolutionDisplay(abs(areaStartX!! - mouseX!!), settings.displayScalingFactor)
+                    modifier = Modifier.offsetMultiResolutionDisplay(
+                            min(areaStartX!!, mouseX!!), min(areaStartY!!, mouseY!!), settings.displayScalingFactor
+                        ).widthMultiResolutionDisplay(abs(areaStartX!! - mouseX!!), settings.displayScalingFactor)
                         .heightMultiResolutionDisplay(abs(areaStartY!! - mouseY!!), settings.displayScalingFactor)
                         .background(color = Color.Red)
                 )
@@ -139,9 +134,11 @@ fun AreaSelectorWindow(areaSelector: AreaSelector) {
             )
             Text(
                 text = "($mouseX,$mouseY)\n(${areaSelector.screenSize.width * mouseX!! / imageSize.width},${areaSelector.screenSize.height * mouseY!! / imageSize.height})",
-                modifier = Modifier
-                    .offsetMultiResolutionDisplay(x = mouseX!!, y = mouseY!!, settings.displayScalingFactor)
-                    .background(color = Color.White)
+                modifier = Modifier.offsetMultiResolutionDisplay(
+                        x = mouseX!!,
+                        y = mouseY!!,
+                        settings.displayScalingFactor
+                    ).background(color = Color.White)
             )
         }
     }

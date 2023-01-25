@@ -1,23 +1,29 @@
+import Application.isCaptureAreaSelectorWindowOpened
+import Application.isTemplateAreaSelectorWindowOpened
 import Application.jsonFormatter
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.window.Window
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import java.awt.Rectangle
+import java.awt.Robot
 import java.io.File
 
 @Serializable
 class Settings {
-    @Serializable(with = MutableStateFlowOfAreasSerializer::class)
-    val captureArea = MutableStateFlow<Area?>(null)
-    @Serializable(with = MutableStateFlowOfAreasSerializer::class)
-    val templateArea = MutableStateFlow<Area?>(null)
+    @Transient
+    val captureArea = MutableStateFlow<Rectangle?>(null)
+    @Transient
+    val templateArea = MutableStateFlow<Rectangle?>(null)
     @Transient
     val displayScalingFactor = getDisplayScalingFactor()
     val detectionAccuracy = 0.80
@@ -55,22 +61,35 @@ class Settings {
 }
 
 @Composable
-fun SettingWindow(settings: Settings) {
-    Window(
-        onCloseRequest = {
-            Application.isSettingWindowOpened.value = false
-        },
-        title = "settings",
-    ) {
-        Column {
-            Row {
-                Text("文字認識範囲設定")
-                Button(
-                    onClick = {
-                        Application.isCaptureAreaSelectorWindowOpened.value = true
-                    }
-                ) {
-                    Text(settings.captureArea.value.toString())
+fun SettingComponent(settings: Settings) {
+    Column {
+        Row {
+            Text("キャプチャエリア")
+            Button(
+                onClick = {
+                    isCaptureAreaSelectorWindowOpened.value = true
+                }
+            ){
+                if(settings.captureArea.value != null) {
+                    Image(
+                        bitmap = Robot().createScreenCapture(settings.captureArea.value!!).toComposeImageBitmap(),
+                        null
+                    )
+                }
+            }
+        }
+        Row {
+            Text("検索画像")
+            Button(
+                onClick = {
+                    isTemplateAreaSelectorWindowOpened.value = true
+                }
+            ){
+                if(settings.templateArea.value != null) {
+                    Image(
+                        bitmap = Robot().createScreenCapture(settings.templateArea.value!!).toComposeImageBitmap(),
+                        null
+                    )
                 }
             }
         }

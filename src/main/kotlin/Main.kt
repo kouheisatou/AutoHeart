@@ -1,6 +1,6 @@
 import Application.imageFinder
 import Application.isCaptureAreaSelectorWindowOpened
-import Application.isSettingWindowOpened
+import Application.isTemplateAreaSelectorWindowOpened
 import Application.settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.awt.Robot
 import java.io.File
 import javax.imageio.ImageIO
 import javax.naming.Context
@@ -32,21 +33,16 @@ import kotlin.system.exitProcess
 object Application {
     val isCaptureAreaSelectorWindowOpened = mutableStateOf(false)
     val isTemplateAreaSelectorWindowOpened = mutableStateOf(false)
-    val isSettingWindowOpened = mutableStateOf(false)
     var settings = Settings()
     val jsonFormatter = Json { encodeDefaults = true }
-    val imageFinder = ImageFinder(
-        ImageIO.read(File("./src/main/resources/sample.png")),
-        ImageIO.read(File("./src/main/resources/hart.png"))
-    )
+    var imageFinder: ImageFinder? = null
 
     init {
-//        settings = settings.load()
+        settings = settings.load()
     }
 }
 
 
-@OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     return application {
         Window(
@@ -58,39 +54,51 @@ fun main() {
 
             if (isCaptureAreaSelectorWindowOpened.value) {
                 val captureAreaSelector by remember {
-                    mutableStateOf(CaptureAreaSelector {
-                        settings.captureArea.value = it
-                        println("Capture$it")
-                    })
+                    mutableStateOf(
+                        AreaSelector(
+                            onCloseRequest = {
+                                isCaptureAreaSelectorWindowOpened.value = false
+                            },
+                            onSelected = {
+
+                                settings.captureArea.value = it
+                                println("Capture$it")
+                            },
+                        ),
+                    )
                 }
-                CaptureAreaSelectorWindow(captureAreaSelector)
-            }
-            if (isSettingWindowOpened.value) {
-                SettingWindow(settings)
+                AreaSelectorWindow(captureAreaSelector, "キャプチャエリアを選択してください")
             }
 
-            if (settings.captureArea.value != null) {
+            if (isTemplateAreaSelectorWindowOpened.value) {
+                val captureAreaSelector by remember {
+                    mutableStateOf(
+                        AreaSelector(
+                            onCloseRequest = {
+                                isTemplateAreaSelectorWindowOpened.value = false
+                            },
+                            onSelected = {
+                                settings.templateArea.value = it
+                                println("Capture$it")
+                            },
+                        ),
+                    )
+                }
+                AreaSelectorWindow(captureAreaSelector, "検索対象を選択してください")
+            }
+
+            if (settings.captureArea.value != null && settings.templateArea.value != null) {
                 // main window layout
-
-
-                ImageFinderComponent(imageFinder)
+                if (imageFinder == null) {
+                    val robot = Robot()
+                    imageFinder = ImageFinder(
+                        robot.createScreenCapture(settings.captureArea.value!!),
+                        robot.createScreenCapture(settings.templateArea.value!!),
+                    )
+                }
+                ImageFinderComponent(imageFinder!!)
             } else {
-                Column {
-                    Text("文字認識領域と自動クリック領域を設定してください")
-                    Button(onClick = {
-                        isCaptureAreaSelectorWindowOpened.value = settings.captureArea.value == null
-                    }) {
-                        Text("OK")
-                    }
-                }
-            }
-
-            MenuBar {
-                Menu("ウィンドウ") {
-                    Item("設定", shortcut = KeyShortcut(key = Key.Comma, meta = true)) {
-                        isSettingWindowOpened.value = true
-                    }
-                }
+                SettingComponent(settings)
             }
         }
     }
