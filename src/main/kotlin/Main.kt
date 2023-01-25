@@ -33,7 +33,7 @@ sealed class MainWindowState {
     object AutoClickerState : MainWindowState()
     object CaptureAreaSelectorState : MainWindowState()
     object TemplateAreaSelectorState : MainWindowState()
-    object ErrorState : MainWindowState()
+    class ErrorState(val msg: String) : MainWindowState()
 }
 
 
@@ -54,10 +54,15 @@ fun main() {
                 is MainWindowState.AutoClickerState -> {
                     if (settings.captureArea.value != null && settings.templateArea.value != null && captureAreaImage != null && templateAreaImage != null) {
                         // main window layout
-                        autoClicker = AutoClicker(
-                            settings.captureArea.value!!,
-                            templateAreaImage!!,
-                        )
+                        try {
+                            autoClicker = AutoClicker(
+                                settings.captureArea.value!!,
+                                templateAreaImage!!,
+                            )
+                        }catch (e: Exception){
+                            state.value = MainWindowState.ErrorState("検索画像から形状を認識できませんでした。もう一度検索画像を選択してください。")
+                            return@Window
+                        }
                         Column {
                             Row(
                                 modifier = Modifier
@@ -75,7 +80,7 @@ fun main() {
                             AutoClickerComponent(autoClicker!!)
                         }
                     } else {
-                        state.value = MainWindowState.ErrorState
+                        state.value = MainWindowState.ErrorState("キャプチャエリアと検索画像の指定が完了していません")
                     }
                 }
 
@@ -87,7 +92,7 @@ fun main() {
                             onNavigate = {
                                 state.value =
                                     if (settings.captureArea.value == null || settings.templateArea.value == null) {
-                                        MainWindowState.ErrorState
+                                        MainWindowState.ErrorState("キャプチャエリアと検索画像の指定が完了していません")
                                     } else {
                                         MainWindowState.AutoClickerState
                                     }
@@ -166,13 +171,18 @@ fun main() {
                 }
 
                 is MainWindowState.ErrorState -> {
+                    val msg = try {
+                        (state.value as MainWindowState.ErrorState).msg
+                    }catch (e: Exception){
+                        ""
+                    }
                     Box(
                         modifier = Modifier.fillMaxSize().padding(30.dp)
                     ) {
                         AlertDialog(
                             modifier = Modifier.fillMaxWidth(),
-                            title = { Text("設定値エラー") },
-                            text = { Text("キャプチャエリアまたは検索画像が選択されていません") },
+                            title = { Text("Error") },
+                            text = { Text(msg) },
                             onDismissRequest = {
                                 state.value = MainWindowState.SettingState
                             },

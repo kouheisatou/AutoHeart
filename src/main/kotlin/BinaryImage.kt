@@ -111,7 +111,7 @@ open class BinaryImage(
 
                         var alreadyRegistered = false
                         for (coordinate in result) {
-                            if (templateImageCoordinateX in coordinate.first.x..coordinate.first.x + templateImage.width && templateImageCoordinateY in coordinate.first.y..coordinate.first.y + templateImage.height) {
+                            if ((templateImageCoordinateX * 2 + templateImage.width) / 2 in coordinate.first.x..coordinate.first.x + templateImage.width && (templateImageCoordinateY * 2 + templateImage.height) / 2 in coordinate.first.y..coordinate.first.y + templateImage.height) {
                                 alreadyRegistered = true
                             }
                         }
