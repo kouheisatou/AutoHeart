@@ -1,3 +1,4 @@
+import Application.settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -33,8 +34,7 @@ abstract class AreaSelector {
     init {
         val robot = Robot()
         screenSize = Rectangle(Toolkit.getDefaultToolkit().screenSize)
-        println(screenSize)
-        screenShot = robot.createMultiResolutionScreenCapture(screenSize).getResolutionVariant(screenSize.getWidth(), screenSize.getHeight()).toBufferedImage()
+        screenShot = robot.createScreenCapture(screenSize)
     }
 
     abstract fun onCloseRequest()
@@ -73,7 +73,9 @@ fun AreaSelectorWindow(areaSelector: AreaSelector) {
                         0f
                     } else if (position.y > imageSize.height) {
                         imageSize.height.toFloat()
-                    } else { position.y }
+                    } else {
+                        position.y
+                    }
                 }
                 .onPointerEvent(PointerEventType.Press) {
                     areaSelector.mode.value = AreaSelectorState.Dragging
@@ -113,7 +115,7 @@ fun AreaSelectorWindow(areaSelector: AreaSelector) {
                 thickness = 1.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset(y = mouseY!!.dp)
+                    .offsetMultiResolutionDisplay(x = null, y = mouseY!!, settings.displayScalingFactor)
             )
             Divider(
                 color = Color.Red,
@@ -121,14 +123,14 @@ fun AreaSelectorWindow(areaSelector: AreaSelector) {
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(1.dp)
-                    .offset(x = mouseX!!.dp)
+                    .offsetMultiResolutionDisplay(x = mouseX!!, y = null, settings.displayScalingFactor)
             )
             if (areaSelector.mode.value == AreaSelectorState.Dragging && areaStartX != null && areaStartY != null) {
                 Box(
                     modifier = Modifier
-                        .offset(min(areaStartX!!, mouseX!!).dp, min(areaStartY!!, mouseY!!).dp)
-                        .width(abs(areaStartX!! - mouseX!!).dp)
-                        .height(abs(areaStartY!! - mouseY!!).dp)
+                        .offsetMultiResolutionDisplay(min(areaStartX!!, mouseX!!), min(areaStartY!!, mouseY!!), settings.displayScalingFactor)
+                        .widthMultiResolutionDisplay(abs(areaStartX!! - mouseX!!), settings.displayScalingFactor)
+                        .heightMultiResolutionDisplay(abs(areaStartY!! - mouseY!!), settings.displayScalingFactor)
                         .background(color = Color.Red)
                 )
             }
@@ -138,7 +140,7 @@ fun AreaSelectorWindow(areaSelector: AreaSelector) {
             Text(
                 text = "($mouseX,$mouseY)\n(${areaSelector.screenSize.width * mouseX!! / imageSize.width},${areaSelector.screenSize.height * mouseY!! / imageSize.height})",
                 modifier = Modifier
-                    .offset(x = mouseX!!.dp, y = mouseY!!.dp)
+                    .offsetMultiResolutionDisplay(x = mouseX!!, y = mouseY!!, settings.displayScalingFactor)
                     .background(color = Color.White)
             )
         }

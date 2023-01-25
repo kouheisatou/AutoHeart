@@ -1,3 +1,4 @@
+import Application.settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -103,9 +104,10 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
                 modifier = Modifier
                     .width(3.dp)
                     .height(3.dp)
-                    .offset(
-                        imageFinder.template.representativePixel.x.dp,
-                        imageFinder.template.representativePixel.y.dp
+                    .offsetMultiResolutionDisplay(
+                        imageFinder.template.representativePixel.x.toFloat(),
+                        imageFinder.template.representativePixel.y.toFloat(),
+                        settings.displayScalingFactor,
                     )
                     .background(Color.Red)
             )
@@ -126,9 +128,10 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
             // current searching point
             Box(
                 modifier = Modifier
-                    .offset(
-                        (imageFinder.currentSearchX.value.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp,
-                        (imageFinder.currentSearchY.value.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp,
+                    .offsetMultiResolutionDisplay(
+                        (imageFinder.currentSearchX.value.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).toFloat(),
+                        (imageFinder.currentSearchY.value.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).toFloat(),
+                        settings.displayScalingFactor,
                     )
                     .width(3.dp)
                     .height(3.dp)
@@ -139,12 +142,13 @@ fun ImageFinderComponent(imageFinder: ImageFinder) {
             for (coordinate in imageFinder.searchResult.value ?: listOf()) {
                 Box(
                     modifier = Modifier
-                        .offset(
-                            (coordinate.x.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp,
-                            (coordinate.y.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp,
+                        .offsetMultiResolutionDisplay(
+                            coordinate.x.toFloat() / imageFinder.image.width.toFloat() * imageSize.width,
+                            coordinate.y.toFloat() / imageFinder.image.height.toFloat() * imageSize.height,
+                            settings.displayScalingFactor,
                         )
-                        .width((imageFinder.template.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width).dp)
-                        .height((imageFinder.template.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height).dp)
+                        .widthMultiResolutionDisplay(imageFinder.template.width.toFloat() / imageFinder.image.width.toFloat() * imageSize.width, settings.displayScalingFactor)
+                        .heightMultiResolutionDisplay(imageFinder.template.height.toFloat() / imageFinder.image.height.toFloat() * imageSize.height, settings.displayScalingFactor)
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Green)
                         .alpha(0.7f)
                 )

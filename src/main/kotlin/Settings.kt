@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.window.Window
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -17,6 +18,8 @@ class Settings {
     val captureArea = MutableStateFlow<Area?>(null)
     @Serializable(with = MutableStateFlowOfAreasSerializer::class)
     val templateArea = MutableStateFlow<Area?>(null)
+    @Transient
+    val displayScalingFactor = getDisplayScalingFactor()
     val detectionAccuracy = 0.80
     val debugMode = true
 
