@@ -113,8 +113,18 @@ open class BinaryImage(
                     val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
                     val templateImageCoordinateY = y - templateImage.representativePixel.y
                     if (templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height) {
-                        result.add(Vector(templateImageCoordinateX, templateImageCoordinateY))
-                        println(result.last())
+
+                        var alreadyRegistered = false
+                        for(coordinate in result){
+                            if(templateImageCoordinateX in coordinate.x .. coordinate.x + templateImage.width && templateImageCoordinateY in coordinate.y .. coordinate.y + templateImage.height){
+                                alreadyRegistered = true
+                            }
+                        }
+
+                        if (!alreadyRegistered) {
+                            result.add(Vector(templateImageCoordinateX, templateImageCoordinateY))
+                            println(result.last())
+                        }
                     }
                 }
             }

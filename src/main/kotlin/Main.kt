@@ -30,7 +30,7 @@ object Application {
 
 sealed class MainWindowState {
     object SettingState : MainWindowState()
-    object ImageFinderState : MainWindowState()
+    object AutoClickerState : MainWindowState()
     object CaptureAreaSelectorState : MainWindowState()
     object TemplateAreaSelectorState : MainWindowState()
     object ErrorState : MainWindowState()
@@ -51,7 +51,7 @@ fun main() {
             var templateAreaImage by remember { mutableStateOf<BufferedImage?>(null) }
 
             when (state.value) {
-                is MainWindowState.ImageFinderState -> {
+                is MainWindowState.AutoClickerState -> {
                     if (settings.captureArea.value != null && settings.templateArea.value != null && captureAreaImage != null && templateAreaImage != null) {
                         // main window layout
                         autoClicker = AutoClicker(
@@ -88,7 +88,7 @@ fun main() {
                                     if (settings.captureArea.value == null || settings.templateArea.value == null) {
                                         MainWindowState.ErrorState
                                     } else {
-                                        MainWindowState.ImageFinderState
+                                        MainWindowState.AutoClickerState
                                     }
                             },
                             navigationButtonTitle = "次へ",
