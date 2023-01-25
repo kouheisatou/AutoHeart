@@ -1,48 +1,44 @@
 import Application.imageFinder
-import Application.isCaptureAreaSelectorWindowOpened
-import Application.isTemplateAreaSelectorWindowOpened
 import Application.settings
+import Application.state
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.awt.Robot
-import java.io.File
-import javax.imageio.ImageIO
-import javax.naming.Context
-import kotlin.coroutines.CoroutineContext
+import java.awt.image.BufferedImage
 import kotlin.system.exitProcess
 
 
 object Application {
-    val isCaptureAreaSelectorWindowOpened = mutableStateOf(false)
-    val isTemplateAreaSelectorWindowOpened = mutableStateOf(false)
     var settings = Settings()
     val jsonFormatter = Json { encodeDefaults = true }
     var imageFinder: ImageFinder? = null
+    val state: MutableState<MainWindowState> = mutableStateOf(MainWindowState.SettingState)
 
     init {
         settings = settings.load()
     }
 }
 
+sealed class MainWindowState {
+    object SettingState : MainWindowState()
+    object ImageFinderState : MainWindowState()
+    object CaptureAreaSelectorState : MainWindowState()
+    object TemplateAreaSelectorState : MainWindowState()
+    object ErrorState : MainWindowState()
+}
 
+
+@OptIn(ExperimentalMaterialApi::class)
 fun main() {
     return application {
         Window(
@@ -52,54 +48,159 @@ fun main() {
             title = "AutoHart",
         ) {
 
-            if (isCaptureAreaSelectorWindowOpened.value) {
-                val captureAreaSelector by remember {
-                    mutableStateOf(
-                        AreaSelector(
-                            onCloseRequest = {
-                                isCaptureAreaSelectorWindowOpened.value = false
-                            },
-                            onSelected = {
+            var captureAreaImage by remember { mutableStateOf<BufferedImage?>(null) }
+            var templateAreaImage by remember { mutableStateOf<BufferedImage?>(null) }
 
-                                settings.captureArea.value = it
-                                println("Capture$it")
-                            },
-                        ),
-                    )
+            when (state.value) {
+                is MainWindowState.ImageFinderState -> {
+                    if (settings.captureArea.value != null && settings.templateArea.value != null && captureAreaImage != null && templateAreaImage != null) {
+                        // main window layout
+                        imageFinder = ImageFinder(
+                            captureAreaImage!!,
+                            templateAreaImage!!,
+                        )
+                        Column {
+                            Row(
+                                modifier = Modifier
+                                    .background(Color.LightGray)
+                                    .fillMaxWidth(),
+                            ) {
+                                Text("画像検索")
+                                TextButton(onClick = {
+                                    state.value = MainWindowState.SettingState
+                                }) {
+                                    Text("設定に戻る")
+                                }
+                            }
+                            ImageFinderComponent(imageFinder!!)
+                        }
+                    } else {
+                        state.value = MainWindowState.ErrorState
+                    }
                 }
-                AreaSelectorWindow(captureAreaSelector, "キャプチャエリアを選択してください")
-            }
 
-            if (isTemplateAreaSelectorWindowOpened.value) {
-                val captureAreaSelector by remember {
-                    mutableStateOf(
-                        AreaSelector(
-                            onCloseRequest = {
-                                isTemplateAreaSelectorWindowOpened.value = false
-                            },
-                            onSelected = {
-                                settings.templateArea.value = it
-                                println("Capture$it")
-                            },
-                        ),
-                    )
-                }
-                AreaSelectorWindow(captureAreaSelector, "検索対象を選択してください")
-            }
+                is MainWindowState.SettingState -> {
 
-            if (settings.captureArea.value != null && settings.templateArea.value != null) {
-                // main window layout
-                if (imageFinder == null) {
-                    val robot = Robot()
-                    imageFinder = ImageFinder(
-                        robot.createScreenCapture(settings.captureArea.value!!),
-                        robot.createScreenCapture(settings.templateArea.value!!),
-                    )
+                    Column {
+                        TitleNavigationComponent(
+                            title = "設定",
+                            onNavigate = {
+                                state.value =
+                                    if (settings.captureArea.value == null || settings.templateArea.value == null) {
+                                        MainWindowState.ErrorState
+                                    } else {
+                                        MainWindowState.ImageFinderState
+                                    }
+                            },
+                            navigationButtonTitle = "次へ",
+                        )
+                        Row {
+                            Text("キャプチャエリア")
+                            Button(
+                                onClick = {
+                                    state.value = MainWindowState.CaptureAreaSelectorState
+                                }
+                            ) {
+                                if (captureAreaImage != null) {
+                                    Image(
+                                        bitmap = captureAreaImage!!.toComposeImageBitmap(),
+                                        null
+                                    )
+                                }
+                            }
+                        }
+                        Row {
+                            Text("検索画像")
+                            Button(
+                                onClick = {
+                                    state.value = MainWindowState.TemplateAreaSelectorState
+                                }
+                            ) {
+                                if (settings.templateArea.value != null) {
+                                    Image(
+                                        bitmap = templateAreaImage!!.toComposeImageBitmap(),
+                                        null
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-                ImageFinderComponent(imageFinder!!)
-            } else {
-                SettingComponent(settings)
+
+                is MainWindowState.CaptureAreaSelectorState -> {
+                    val captureAreaSelector by remember {
+                        mutableStateOf(
+                            AreaSelector(
+                                onCloseRequest = {
+                                    state.value = MainWindowState.SettingState
+                                },
+                                onSelected = { selectedArea, selectedAreaImage ->
+                                    settings.captureArea.value = selectedArea
+                                    captureAreaImage = selectedAreaImage
+                                    println("Capture$selectedArea")
+                                },
+                            ),
+                        )
+                    }
+                    AreaSelectorComponent(captureAreaSelector, "キャプチャエリア選択してください")
+                }
+
+                is MainWindowState.TemplateAreaSelectorState -> {
+                    val captureAreaSelector by remember {
+                        mutableStateOf(
+                            AreaSelector(
+                                onCloseRequest = {
+                                    state.value = MainWindowState.SettingState
+                                },
+                                onSelected = { selectedArea, selectedAreaImage ->
+                                    settings.templateArea.value = selectedArea
+                                    templateAreaImage = selectedAreaImage
+                                    println("Capture$selectedArea")
+                                },
+                            ),
+                        )
+                    }
+
+                    // layout
+                    AreaSelectorComponent(captureAreaSelector, "検索対象の画像がある領域を選択してください")
+                }
+
+                is MainWindowState.ErrorState -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(30.dp)
+                    ) {
+                        AlertDialog(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = { Text("設定値エラー") },
+                            text = { Text("キャプチャエリアまたは検索画像が選択されていません") },
+                            onDismissRequest = {
+                                state.value = MainWindowState.SettingState
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    state.value = MainWindowState.SettingState
+                                }) {
+                                    Text("OK")
+                                }
+                            },
+                        )
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun TitleNavigationComponent(title: String, onNavigate: () -> Unit, navigationButtonTitle: String) {
+    Row(
+        modifier = Modifier
+            .background(Color.LightGray)
+            .fillMaxWidth(),
+    ) {
+        Text(title)
+        TextButton(onClick = onNavigate) {
+            Text(navigationButtonTitle)
         }
     }
 }

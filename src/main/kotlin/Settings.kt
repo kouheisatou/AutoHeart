@@ -1,6 +1,5 @@
-import Application.isCaptureAreaSelectorWindowOpened
-import Application.isTemplateAreaSelectorWindowOpened
 import Application.jsonFormatter
+import Application.state
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
@@ -56,42 +55,6 @@ class Settings {
             }
         } else {
             Settings()
-        }
-    }
-}
-
-@Composable
-fun SettingComponent(settings: Settings) {
-    Column {
-        Row {
-            Text("キャプチャエリア")
-            Button(
-                onClick = {
-                    isCaptureAreaSelectorWindowOpened.value = true
-                }
-            ){
-                if(settings.captureArea.value != null) {
-                    Image(
-                        bitmap = Robot().createScreenCapture(settings.captureArea.value!!).toComposeImageBitmap(),
-                        null
-                    )
-                }
-            }
-        }
-        Row {
-            Text("検索画像")
-            Button(
-                onClick = {
-                    isTemplateAreaSelectorWindowOpened.value = true
-                }
-            ){
-                if(settings.templateArea.value != null) {
-                    Image(
-                        bitmap = Robot().createScreenCapture(settings.templateArea.value!!).toComposeImageBitmap(),
-                        null
-                    )
-                }
-            }
         }
     }
 }
