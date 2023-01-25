@@ -33,7 +33,8 @@ abstract class AreaSelector {
     init {
         val robot = Robot()
         screenSize = Rectangle(Toolkit.getDefaultToolkit().screenSize)
-        screenShot = robot.createScreenCapture(screenSize)
+        println(screenSize)
+        screenShot = robot.createMultiResolutionScreenCapture(screenSize).getResolutionVariant(screenSize.getWidth(), screenSize.getHeight()).toBufferedImage()
     }
 
     abstract fun onCloseRequest()

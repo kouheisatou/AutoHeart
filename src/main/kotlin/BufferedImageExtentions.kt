@@ -1,6 +1,7 @@
-import Application.settings
+import java.awt.Image
 import java.awt.image.BufferedImage
 import kotlin.math.abs
+
 
 fun BufferedImage.binalized(threshold: Int = calcBinalizeThreshold()): BufferedImage {
 
@@ -108,6 +109,14 @@ fun BufferedImage.calcBinalizeThreshold(): Int {
 //    println(max1Index)
 //    println(max2Index)
     return (max1Index!! + max2Index!!) / 2
+}
+
+fun Image.toBufferedImage(): BufferedImage {
+    val bi = BufferedImage(getWidth(null), getHeight(null), BufferedImage.TYPE_INT_ARGB)
+    val bGr = bi.createGraphics()
+    bGr.drawImage(this, 0, 0, null)
+    bGr.dispose()
+    return bi
 }
 
 class ImageConversionException(msg: String) : Exception(msg)

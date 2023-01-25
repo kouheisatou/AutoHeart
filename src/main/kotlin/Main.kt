@@ -31,6 +31,7 @@ import kotlin.system.exitProcess
 
 object Application {
     val isCaptureAreaSelectorWindowOpened = mutableStateOf(false)
+    val isTemplateAreaSelectorWindowOpened = mutableStateOf(false)
     val isSettingWindowOpened = mutableStateOf(false)
     var settings = Settings()
     val jsonFormatter = Json { encodeDefaults = true }
@@ -40,7 +41,7 @@ object Application {
     )
 
     init {
-        settings = settings.load()
+//        settings = settings.load()
     }
 }
 
@@ -70,6 +71,7 @@ fun main() {
 
             if (settings.captureArea.value != null) {
                 // main window layout
+
 
                 ImageFinderComponent(imageFinder)
             } else {

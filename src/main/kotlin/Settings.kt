@@ -15,6 +15,8 @@ import java.io.File
 class Settings {
     @Serializable(with = MutableStateFlowOfAreasSerializer::class)
     val captureArea = MutableStateFlow<Area?>(null)
+    @Serializable(with = MutableStateFlowOfAreasSerializer::class)
+    val templateArea = MutableStateFlow<Area?>(null)
     val detectionAccuracy = 0.80
     val debugMode = true
 
