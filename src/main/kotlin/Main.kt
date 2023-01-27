@@ -22,10 +22,6 @@ object Application {
     val jsonFormatter = Json { encodeDefaults = true }
     var autoClicker: AutoClicker? = null
     val state: MutableState<MainWindowState> = mutableStateOf(MainWindowState.SettingState)
-
-    init {
-        settings = settings.load()
-    }
 }
 
 sealed class MainWindowState {
