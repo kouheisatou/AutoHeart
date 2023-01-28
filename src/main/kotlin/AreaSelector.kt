@@ -1,10 +1,8 @@
-import Application.settings
+import Application.state
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Divider
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.*
@@ -146,7 +144,7 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                 thickness = 1.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offsetMultiResolutionDisplay(x = null, y = mouseY!!, settings.displayScalingFactor)
+                    .offsetMultiResolutionDisplay(x = null, y = mouseY!!, Settings.displayScalingFactor)
             )
             Divider(
                 color = Color.Red,
@@ -154,19 +152,60 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(1.dp)
-                    .offsetMultiResolutionDisplay(x = mouseX!!, y = null, settings.displayScalingFactor)
+                    .offsetMultiResolutionDisplay(x = mouseX!!, y = null, Settings.displayScalingFactor)
             )
             if (areaSelector.mode.value == AreaSelectorState.Dragging && areaStartX != null && areaStartY != null) {
                 Box(
                     modifier = Modifier
                         .offsetMultiResolutionDisplay(
-                            min(areaStartX!!, mouseX!!), min(areaStartY!!, mouseY!!), settings.displayScalingFactor
+                            min(areaStartX!!, mouseX!!), min(areaStartY!!, mouseY!!), Settings.displayScalingFactor
                         )
-                        .widthMultiResolutionDisplay(abs(areaStartX!! - mouseX!!), settings.displayScalingFactor)
-                        .heightMultiResolutionDisplay(abs(areaStartY!! - mouseY!!), settings.displayScalingFactor)
+                        .widthMultiResolutionDisplay(abs(areaStartX!! - mouseX!!), Settings.displayScalingFactor)
+                        .heightMultiResolutionDisplay(abs(areaStartY!! - mouseY!!), Settings.displayScalingFactor)
                         .border(1.dp, color = Color.Red)
                 )
             }
         }
     }
+}
+
+@Composable
+fun ImageAreaSelectorScreen(){
+
+    val captureAreaSelector by remember {
+        mutableStateOf(
+            AreaSelector(
+                onCloseRequest = {
+                    state.value = MainWindowState.SettingState
+                },
+                onSelected = { selectedArea, selectedAreaImage ->
+                    Settings.captureArea.value = selectedArea
+                    Settings.captureAreaImage.value = selectedAreaImage
+                    println("Capture$selectedArea")
+                },
+            ),
+        )
+    }
+    AreaSelectorComponent(captureAreaSelector, "キャプチャエリア選択してください")
+}
+
+@Composable
+fun TemplateImageAreaSelectorScreen(){
+    val captureAreaSelector by remember {
+        mutableStateOf(
+            AreaSelector(
+                onCloseRequest = {
+                    state.value = MainWindowState.SettingState
+                },
+                onSelected = { selectedArea, selectedAreaImage ->
+                    Settings.templateArea.value = selectedArea
+                    Settings.templateAreaImage.value = selectedAreaImage
+                    println("Capture$selectedArea")
+                },
+            ),
+        )
+    }
+
+    // layout
+    AreaSelectorComponent(captureAreaSelector, "検索対象の画像がある領域を選択してください")
 }

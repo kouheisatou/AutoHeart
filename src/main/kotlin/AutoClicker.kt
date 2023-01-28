@@ -1,11 +1,10 @@
-import Application.settings
+import Application.autoClicker
+import Application.state
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -59,10 +58,10 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                         (area.y + (coordinate.y * 2 + coordinate.height).toFloat() / 2.0f).toInt(),
                     )
                     r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
-                    Thread.sleep(settings.mouseDownTimeMillis.toLong())
+                    Thread.sleep(Settings.mouseDownTimeMillis.toLong())
                     r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
                 }
-                r.mouseWheel(settings.scrollDownAmount)
+                r.mouseWheel(Settings.scrollDownAmount)
             }
         }
     }
@@ -114,7 +113,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                     .offsetMultiResolutionDisplay(
                         autoClicker.binaryTemplateImage.representativePixel.x.toFloat(),
                         autoClicker.binaryTemplateImage.representativePixel.y.toFloat(),
-                        settings.displayScalingFactor,
+                        Settings.displayScalingFactor,
                     )
                     .background(Color.Red)
             )
@@ -139,19 +138,53 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         .offsetMultiResolutionDisplay(
                             coordinate.x.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
                             coordinate.y.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
-                            settings.displayScalingFactor,
+                            Settings.displayScalingFactor,
                         )
                         .widthMultiResolutionDisplay(
                             autoClicker.binaryTemplateImage.width.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
-                            settings.displayScalingFactor
+                            Settings.displayScalingFactor
                         )
                         .heightMultiResolutionDisplay(
                             autoClicker.binaryTemplateImage.height.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
-                            settings.displayScalingFactor
+                            Settings.displayScalingFactor
                         )
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Red)
                 )
             }
         }
+    }
+}
+
+@Composable
+fun AutoClickerScreen(){
+    if (Settings.captureArea.value != null && Settings.templateArea.value != null && Settings.captureAreaImage.value != null && Settings.templateAreaImage.value != null) {
+        // main window layout
+        try {
+            autoClicker = AutoClicker(
+                Settings.captureArea.value!!,
+                Settings.templateAreaImage.value!!,
+            )
+        }catch (e: Exception){
+            state.value = MainWindowState.ErrorState("検索画像から形状を認識できませんでした。もう一度検索画像を選択してください。")
+            return
+        }
+        Scaffold(topBar = {
+            TopAppBar(modifier = Modifier.fillMaxWidth()) {
+                Row {
+                    IconButton(onClick = {
+                        state.value = MainWindowState.SettingState
+                    }){
+                        Text("<")
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text("自動クリック")
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }) {
+            AutoClickerComponent(autoClicker!!)
+        }
+    } else {
+        state.value = MainWindowState.ErrorState("キャプチャエリアと検索画像の指定が完了していません")
     }
 }

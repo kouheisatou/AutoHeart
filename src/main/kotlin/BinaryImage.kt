@@ -1,4 +1,3 @@
-import Application.settings
 import java.awt.Rectangle
 import java.awt.image.BufferedImage
 
@@ -102,7 +101,7 @@ open class BinaryImage(
                 val color = (alpha shl 24) + (red shl 16) + (green shl 8) + blue
                 weightMapAlphaImage.setRGB(x, y, color)
 
-                if (weightMap[y][x].toDouble() / templateImage.whitePixels.size > settings.detectionAccuracy) {
+                if (weightMap[y][x].toDouble() / templateImage.whitePixels.size > Settings.detectionAccuracy) {
                     val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
                     val templateImageCoordinateY = y - (templateImage.height - templateImage.representativePixel.y)
                     if (templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height) {
