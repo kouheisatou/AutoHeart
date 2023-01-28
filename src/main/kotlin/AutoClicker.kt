@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.awt.Rectangle
 import java.awt.Robot
+import java.awt.event.InputEvent
 import java.awt.image.BufferedImage
 
 class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
@@ -62,6 +63,15 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
             onSearchFinished = { result, map ->
                 searchResult.value = result
                 weightImageMap.value = map
+                for (coordinate in result) {
+                    Robot().mouseMove(
+                        (area.x + (coordinate.first.x * 2 + coordinate.first.width).toFloat() / 2.0f).toInt(),
+                        (area.y + (coordinate.first.y * 2 + coordinate.first.height).toFloat() / 2.0f).toInt(),
+                    )
+                    Robot().mousePress(InputEvent.BUTTON1_DOWN_MASK)
+                    Thread.sleep(1)
+                    Robot().mousePress(InputEvent.BUTTON1_DOWN_MASK)
+                }
                 if (processing.value) {
                     autoClick()
                 }

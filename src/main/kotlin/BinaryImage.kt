@@ -1,7 +1,6 @@
 import Application.settings
 import java.awt.Rectangle
 import java.awt.image.BufferedImage
-import java.io.File
 
 const val BLACK = false
 const val WHITE = true
@@ -67,14 +66,14 @@ open class BinaryImage(
     fun find(
         templateImage: BinaryImage,
         currentSearchCoordinateChanged: ((coordinate: Vector, progress: Float) -> Unit)? = null,
-        onSearchFinished: ((result: List<Pair<Rectangle, Vector>>, weightMapAlphaImage: BufferedImage) -> Unit)? = null,
+        onSearchFinished: ((results: List<Pair<Rectangle, Vector>>, weightMapAlphaImage: BufferedImage) -> Unit)? = null,
     ) {
         val flippedImage = templateImage.flipped()
 
         var maxWeight = 0
         // first: bounding box
         // second: representative point coordinate
-        val result = mutableListOf<Pair<Rectangle, Vector>>()
+        val results = mutableListOf<Pair<Rectangle, Vector>>()
 
         // row:y, column:x
         val weightMap = Array(height) { Array(width) { 0 } }
@@ -110,31 +109,31 @@ open class BinaryImage(
                     if (templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height) {
 
                         var alreadyRegistered = false
-                        for (coordinate in result) {
+                        for (coordinate in results) {
                             if ((templateImageCoordinateX * 2 + templateImage.width) / 2 in coordinate.first.x..coordinate.first.x + templateImage.width && (templateImageCoordinateY * 2 + templateImage.height) / 2 in coordinate.first.y..coordinate.first.y + templateImage.height) {
                                 alreadyRegistered = true
                             }
                         }
 
                         if (!alreadyRegistered) {
-                            result.add(
-                                Pair(
-                                    Rectangle(
-                                        templateImageCoordinateX,
-                                        templateImageCoordinateY,
-                                        templateImage.width,
-                                        templateImage.height
-                                    ), Vector(x, y),
+                            val result = Pair(
+                                Rectangle(
+                                    templateImageCoordinateX,
+                                    templateImageCoordinateY,
+                                    templateImage.width,
+                                    templateImage.height
                                 ),
+                                Vector(x, y),
                             )
-                            println(weightMap[y][x].toDouble() / templateImage.whitePixels.size)
-                            println(result.last())
+                            results.add(result)
+                            println("boundingBox=(x=${result.first.x} y=${result.first.y} width=${result.first.width} height=${result.first.height}) representativePoint=(${result.second.x},$result weight=${weightMap[y][x].toDouble() / templateImage.whitePixels.size}")
+                            println(results.last())
                         }
                     }
                 }
             }
         }
-        onSearchFinished?.invoke(result, weightMapAlphaImage)
+        onSearchFinished?.invoke(results, weightMapAlphaImage)
     }
 }
 
