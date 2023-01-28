@@ -15,6 +15,7 @@ open class BinaryImage(
 
     val whitePixels: Array<Vector>
     val representativePixel: Vector
+    val weightMapAlphaImage = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
 
     init {
         val whitePixels = mutableListOf<Vector>()
@@ -63,17 +64,16 @@ open class BinaryImage(
         return BinaryImage(width, height, copiedBitmap)
     }
 
-    fun find(
+    suspend fun find(
         templateImage: BinaryImage,
         currentSearchCoordinateChanged: ((coordinate: Vector, progress: Float) -> Unit)? = null,
-        onSearchFinished: ((results: List<Pair<Rectangle, Vector>>, weightMapAlphaImage: BufferedImage) -> Unit)? = null,
-    ) {
+    ): List<Rectangle> {
         val flippedImage = templateImage.flipped()
 
         var maxWeight = 0
         // first: bounding box
         // second: representative point coordinate
-        val results = mutableListOf<Pair<Rectangle, Vector>>()
+        val results = mutableListOf<Rectangle>()
 
         // row:y, column:x
         val weightMap = Array(height) { Array(width) { 0 } }
@@ -92,7 +92,6 @@ open class BinaryImage(
             }
         }
 
-        val weightMapAlphaImage = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
         for (y in weightMap.indices) {
             for (x in weightMap[y].indices) {
 
@@ -110,30 +109,27 @@ open class BinaryImage(
 
                         var alreadyRegistered = false
                         for (coordinate in results) {
-                            if ((templateImageCoordinateX * 2 + templateImage.width) / 2 in coordinate.first.x..coordinate.first.x + templateImage.width && (templateImageCoordinateY * 2 + templateImage.height) / 2 in coordinate.first.y..coordinate.first.y + templateImage.height) {
+                            if ((templateImageCoordinateX * 2 + templateImage.width) / 2 in coordinate.x..coordinate.x + templateImage.width && (templateImageCoordinateY * 2 + templateImage.height) / 2 in coordinate.y..coordinate.y + templateImage.height) {
                                 alreadyRegistered = true
                             }
                         }
 
                         if (!alreadyRegistered) {
-                            val result = Pair(
-                                Rectangle(
-                                    templateImageCoordinateX,
-                                    templateImageCoordinateY,
-                                    templateImage.width,
-                                    templateImage.height
-                                ),
-                                Vector(x, y),
+                            val result = Rectangle(
+                                templateImageCoordinateX,
+                                templateImageCoordinateY,
+                                templateImage.width,
+                                templateImage.height
                             )
                             results.add(result)
-                            println("boundingBox=(x=${result.first.x} y=${result.first.y} width=${result.first.width} height=${result.first.height}) representativePoint=(${result.second.x},$result weight=${weightMap[y][x].toDouble() / templateImage.whitePixels.size}")
+                            println("boundingBox=(x=${result.x} y=${result.y} width=${result.width} height=${result.height}) representativePoint=(${result.x},${result.y}) weight=${weightMap[y][x].toDouble() / templateImage.whitePixels.size}")
                             println(results.last())
                         }
                     }
                 }
             }
         }
-        onSearchFinished?.invoke(results, weightMapAlphaImage)
+        return results
     }
 }
 

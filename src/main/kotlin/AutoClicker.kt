@@ -29,54 +29,47 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
     val capturedImage = mutableStateOf<BufferedImage>(Robot().createScreenCapture(area))
     val weightImageMap = mutableStateOf<BufferedImage?>(null)
 
-    val searchResult = mutableStateOf<List<Pair<Rectangle, Vector>>?>(null)
+    val searchResult = mutableStateOf<List<Rectangle>>(mutableListOf())
 
     var processing = mutableStateOf(false)
     var percentage = mutableStateOf(0f)
 
     fun start() {
-        if (processing.value) {
-            return
-        }
+        if (processing.value) return
         processing.value = true
 
         CoroutineScope(Dispatchers.IO).launch {
             println("start")
-            autoClick()
+            while (processing.value) {
+
+                capturedImage.value = Robot().createScreenCapture(area)
+                val capturedImage = convertBufferedImageToBinaryImage(capturedImage.value, threshold)
+                searchResult.value = capturedImage.find(
+                    binaryTemplateImage,
+                    currentSearchCoordinateChanged = { _, p ->
+                        percentage.value = p
+                    },
+                )
+                weightImageMap.value = capturedImage.weightMapAlphaImage
+
+                val r = Robot()
+                for (coordinate in searchResult.value) {
+                    r.mouseMove(
+                        (area.x + (coordinate.x * 2 + coordinate.width).toFloat() / 2.0f).toInt(),
+                        (area.y + (coordinate.y * 2 + coordinate.height).toFloat() / 2.0f).toInt(),
+                    )
+                    r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
+                    Thread.sleep(settings.mouseDownTimeMillis.toLong())
+                    r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
+                }
+                r.mouseWheel(settings.scrollDownAmount)
+            }
         }
     }
 
     fun stop() {
         processing.value = false
         println("stop")
-    }
-
-    private fun autoClick() {
-
-        capturedImage.value = Robot().createScreenCapture(area)
-        val capturedImage = convertBufferedImageToBinaryImage(capturedImage.value, threshold)
-        capturedImage.find(
-            binaryTemplateImage,
-            currentSearchCoordinateChanged = { _, p ->
-                percentage.value = p
-            },
-            onSearchFinished = { result, map ->
-                searchResult.value = result
-                weightImageMap.value = map
-                for (coordinate in result) {
-                    Robot().mouseMove(
-                        (area.x + (coordinate.first.x * 2 + coordinate.first.width).toFloat() / 2.0f).toInt(),
-                        (area.y + (coordinate.first.y * 2 + coordinate.first.height).toFloat() / 2.0f).toInt(),
-                    )
-                    Robot().mousePress(InputEvent.BUTTON1_DOWN_MASK)
-                    Thread.sleep(1)
-                    Robot().mousePress(InputEvent.BUTTON1_DOWN_MASK)
-                }
-                if (processing.value) {
-                    autoClick()
-                }
-            },
-        )
     }
 }
 
@@ -140,12 +133,12 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
             }
 
             // search result point
-            for (coordinate in autoClicker.searchResult.value ?: listOf()) {
+            for (coordinate in autoClicker.searchResult.value) {
                 Box(
                     modifier = Modifier
                         .offsetMultiResolutionDisplay(
-                            coordinate.first.x.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
-                            coordinate.first.y.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
+                            coordinate.x.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
+                            coordinate.y.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
                             settings.displayScalingFactor,
                         )
                         .widthMultiResolutionDisplay(
@@ -157,17 +150,6 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                             settings.displayScalingFactor
                         )
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Red)
-                )
-                Box(
-                    modifier = Modifier
-                        .width(3.dp)
-                        .height(3.dp)
-                        .offsetMultiResolutionDisplay(
-                            coordinate.second.x.toFloat(),
-                            coordinate.second.y.toFloat(),
-                            settings.displayScalingFactor,
-                        )
-                        .background(Color.Red)
                 )
             }
         }
