@@ -13,7 +13,7 @@ open class BinaryImage(
 ) {
 
     val whitePixels: Array<Vector>
-    val representativePixel: Vector
+    val representativePixel: Vector?
     val weightMapAlphaImage = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
 
     init {
@@ -26,7 +26,7 @@ open class BinaryImage(
             }
         }
         this.whitePixels = whitePixels.toTypedArray()
-        this.representativePixel = whitePixels[0]
+        this.representativePixel = whitePixels.getOrNull(0)
     }
 
     fun getColorAt(x: Int, y: Int): Boolean {
@@ -67,7 +67,9 @@ open class BinaryImage(
         templateImage: BinaryImage,
         currentSearchCoordinateChanged: ((coordinate: Vector, progress: Float) -> Unit)? = null,
     ): List<Rectangle> {
+        if (templateImage.representativePixel == null) throw ImageConversionException("No representativePixel")
         val flippedImage = templateImage.flipped()
+        flippedImage.representativePixel!!
 
         var maxWeight = 0
         // first: bounding box
@@ -94,7 +96,11 @@ open class BinaryImage(
         for (y in weightMap.indices) {
             for (x in weightMap[y].indices) {
 
-                val alpha = 0xff * weightMap[y][x] / maxWeight
+                val alpha = if (maxWeight != 0) {
+                    0xff * weightMap[y][x] / maxWeight
+                } else {
+                    0x00
+                }
                 val red = 0x00
                 val green = 0xff
                 val blue = 0x00

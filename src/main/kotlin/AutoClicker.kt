@@ -43,12 +43,17 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 
                 capturedImage.value = Robot().createScreenCapture(area)
                 val capturedImage = convertBufferedImageToBinaryImage(capturedImage.value, threshold)
-                searchResult.value = capturedImage.find(
-                    binaryTemplateImage,
-                    currentSearchCoordinateChanged = { _, p ->
-                        percentage.value = p
-                    },
-                )
+                try {
+                    searchResult.value = capturedImage.find(
+                        binaryTemplateImage,
+                        currentSearchCoordinateChanged = { _, p ->
+                            percentage.value = p
+                        },
+                    )
+                }catch (e:Exception){
+                    e.printStackTrace()
+                    println(e.message)
+                }
                 weightImageMap.value = capturedImage.weightMapAlphaImage
 
                 val r = Robot()
@@ -61,7 +66,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                     Thread.sleep(Settings.mouseDownTimeMillis.toLong())
                     r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
                 }
-                r.mouseWheel(Settings.scrollDownAmount)
+                r.mouseWheel(-Settings.scrollDownAmount)
             }
         }
     }
@@ -104,19 +109,21 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
             }
         }
 
-        Box {
-            Image(bitmap = autoClicker.templateImage.toBufferedImage().toComposeImageBitmap(), null)
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(3.dp)
-                    .offsetMultiResolutionDisplay(
-                        autoClicker.binaryTemplateImage.representativePixel.x.toFloat(),
-                        autoClicker.binaryTemplateImage.representativePixel.y.toFloat(),
-                        Settings.displayScalingFactor,
-                    )
-                    .background(Color.Red)
-            )
+        if(autoClicker.binaryTemplateImage.representativePixel != null){
+            Box {
+                Image(bitmap = autoClicker.templateImage.toBufferedImage().toComposeImageBitmap(), null)
+                Box(
+                    modifier = Modifier
+                        .width(3.dp)
+                        .height(3.dp)
+                        .offsetMultiResolutionDisplay(
+                            autoClicker.binaryTemplateImage.representativePixel.x.toFloat(),
+                            autoClicker.binaryTemplateImage.representativePixel.y.toFloat(),
+                            Settings.displayScalingFactor,
+                        )
+                        .background(Color.Red)
+                )
+            }
         }
 
         Box {
@@ -156,24 +163,25 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
 }
 
 @Composable
-fun AutoClickerScreen(){
+fun AutoClickerScreen() {
     if (Settings.captureArea.value != null && Settings.templateArea.value != null && Settings.captureAreaImage.value != null && Settings.templateAreaImage.value != null) {
         // main window layout
-        try {
-            autoClicker = AutoClicker(
-                Settings.captureArea.value!!,
-                Settings.templateAreaImage.value!!,
-            )
-        }catch (e: Exception){
+        autoClicker = AutoClicker(
+            Settings.captureArea.value!!,
+            Settings.templateAreaImage.value!!,
+        )
+
+        if(autoClicker!!.binaryTemplateImage.representativePixel == null){
             state.value = MainWindowState.ErrorState("検索画像から形状を認識できませんでした。もう一度検索画像を選択してください。")
             return
         }
+
         Scaffold(topBar = {
             TopAppBar(modifier = Modifier.fillMaxWidth()) {
                 Row {
                     IconButton(onClick = {
                         state.value = MainWindowState.SettingState
-                    }){
+                    }) {
                         Text("<")
                     }
                     Spacer(modifier = Modifier.weight(1f))

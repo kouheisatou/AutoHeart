@@ -25,7 +25,6 @@ sealed class MainWindowState {
 }
 
 
-@OptIn(ExperimentalMaterialApi::class)
 fun main() {
     return application {
         Window(
