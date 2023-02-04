@@ -16,7 +16,7 @@ object Settings {
     val detectionAccuracy = 0.99
     val clickTime = 3
     val clickInterval = 10
-    val scrollDownAmount = 10
+    val nextImageInterval = 100
 
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)

@@ -38,6 +38,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
     var percentage = mutableStateOf(0f)
     private var count = 0
 
+    @OptIn(ExperimentalComposeUiApi::class)
     fun start() {
         if (processing.value) return
         processing.value = true
@@ -118,7 +119,9 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 
                 // クリックすべきものがなくなったらスクロールして次の画像を読み込む
                 if (searchResult.value.isEmpty()) {
-                    r.mouseWheel(-Settings.scrollDownAmount)
+                    r.keyPress(Key.PageDown.nativeKeyCode)
+                    r.delay(Settings.clickTime)
+                    r.keyRelease(Key.PageDown.nativeKeyCode)
                 }
 
                 // stopCountを超えたら自動終了
@@ -126,6 +129,9 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                     stop()
                     break
                 }
+
+                // キャプチャインターバル
+                r.delay(Settings.nextImageInterval)
             }
         }
     }
