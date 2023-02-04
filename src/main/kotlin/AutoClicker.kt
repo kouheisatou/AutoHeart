@@ -7,16 +7,20 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.awt.MouseInfo
 import java.awt.Rectangle
 import java.awt.Robot
 import java.awt.event.InputEvent
@@ -32,17 +36,30 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 
     var processing = mutableStateOf(false)
     var percentage = mutableStateOf(0f)
+    private var count = 0
 
     fun start() {
         if (processing.value) return
         processing.value = true
+        count = 0
 
         CoroutineScope(Dispatchers.IO).launch {
-            println("start")
+            println("START")
+
+            // マウス位置リセット
+            val r = Robot()
+            r.mouseMove(area.x, area.y)
+            r.delay(Settings.clickInterval)
+
             while (processing.value) {
 
+                // 自動クリックエリアのキャプチャを取得
                 capturedImage.value = Robot().createScreenCapture(area)
+
+                // 2値画像に変換
                 val capturedImage = convertBufferedImageToBinaryImage(capturedImage.value, threshold)
+
+                // 画像検索
                 try {
                     searchResult.value = capturedImage.find(
                         binaryTemplateImage,
@@ -50,30 +67,81 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                             percentage.value = p
                         },
                     )
-                }catch (e:Exception){
+                } catch (e: Exception) {
                     e.printStackTrace()
                     println(e.message)
                 }
+
+                // 画像検索に利用した重みマップを重ねて表示
                 weightImageMap.value = capturedImage.weightMapAlphaImage
 
-                val r = Robot()
+                // マウスを自動クリック範囲外に持っていくと終了
+                if (isCursorOutside()) {
+                    stop("Mouse moved outside of auto click area.")
+                    break
+                }
+
+                // 検索結果の座標をすべてクリックする
                 for (coordinate in searchResult.value) {
+
+                    // boundingBoxが自動クリックエリア外の場合、スキップ
+                    if (!((area.x + (coordinate.x * 2 + coordinate.width).toFloat() / 2.0f).toInt() in area.x..area.x + area.width && (area.y + (coordinate.y * 2 + coordinate.height).toFloat() / 2.0f).toInt() in area.y..area.y + area.height)) {
+                        continue
+                    }
+
+                    // 自動クリック
                     r.mouseMove(
                         (area.x + (coordinate.x * 2 + coordinate.width).toFloat() / 2.0f).toInt(),
                         (area.y + (coordinate.y * 2 + coordinate.height).toFloat() / 2.0f).toInt(),
                     )
                     r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
-                    Thread.sleep(Settings.mouseDownTimeMillis.toLong())
-                    r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
+                    r.delay(Settings.clickTime)
+                    r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+
+                    // マウスを自動クリック範囲外に持っていくと終了
+                    if (isCursorOutside()) {
+                        stop("Mouse moved outside of auto click area.")
+                        break
+                    }
+
+                    // マウス位置リセット（マウスホバーでダイアログが出るwebページを回避するため）
+                    r.mouseMove(area.x, area.y)
+                    r.delay(Settings.clickInterval)
+
+                    // マウスを自動クリック範囲外に持っていくと終了
+                    if (isCursorOutside()) {
+                        stop("Mouse moved outside of auto click area.")
+                        break
+                    }
                 }
-                r.mouseWheel(-Settings.scrollDownAmount)
+                count++
+
+                // クリックすべきものがなくなったらスクロールして次の画像を読み込む
+                if (searchResult.value.isEmpty()) {
+                    r.mouseWheel(-Settings.scrollDownAmount)
+                }
+
+                // stopCountを超えたら自動終了
+                if (count >= Settings.stopCount) {
+                    stop()
+                    break
+                }
             }
         }
     }
 
-    fun stop() {
+    private fun isCursorOutside(): Boolean {
+        val mouseLocation = MouseInfo.getPointerInfo().location
+        return !(mouseLocation.x in area.x..area.x + area.width && mouseLocation.y in area.y..area.y + area.height)
+    }
+
+    fun stop(msg: String? = null) {
         processing.value = false
-        println("stop")
+        if(msg == null) {
+            println("STOP")
+        }else{
+            println("STOP : $msg")
+        }
     }
 }
 
@@ -109,7 +177,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
             }
         }
 
-        if(autoClicker.binaryTemplateImage.representativePixel != null){
+        if (autoClicker.binaryTemplateImage.representativePixel != null) {
             Box {
                 Image(bitmap = autoClicker.templateImage.toBufferedImage().toComposeImageBitmap(), null)
                 Box(
@@ -171,7 +239,7 @@ fun AutoClickerScreen() {
             Settings.templateAreaImage.value!!,
         )
 
-        if(autoClicker!!.binaryTemplateImage.representativePixel == null){
+        if (autoClicker!!.binaryTemplateImage.representativePixel == null) {
             state.value = MainWindowState.ErrorState("検索画像から形状を認識できませんでした。もう一度検索画像を選択してください。")
             return
         }

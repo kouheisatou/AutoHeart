@@ -128,7 +128,6 @@ open class BinaryImage(
                             )
                             results.add(result)
                             println("boundingBox=(x=${result.x} y=${result.y} width=${result.width} height=${result.height}) representativePoint=(${result.x},${result.y}) weight=${weightMap[y][x].toDouble() / templateImage.whitePixels.size}")
-                            println(results.last())
                         }
                     }
                 }

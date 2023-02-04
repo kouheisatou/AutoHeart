@@ -1,12 +1,9 @@
-import Application.autoClicker
 import Application.state
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.awt.Rectangle
@@ -16,12 +13,14 @@ object Settings {
     val captureArea = MutableStateFlow<Rectangle?>(null)
     val templateArea = MutableStateFlow<Rectangle?>(null)
     val displayScalingFactor = getDisplayScalingFactor()
-    val detectionAccuracy = 0.96
-    val mouseDownTimeMillis = 1
+    val detectionAccuracy = 0.99
+    val clickTime = 3
+    val clickInterval = 10
     val scrollDownAmount = 10
 
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)
+    val stopCount = 100
 }
 
 
