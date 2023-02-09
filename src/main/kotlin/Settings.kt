@@ -13,7 +13,7 @@ object Settings {
     val captureArea = MutableStateFlow<Rectangle?>(null)
     val templateArea = MutableStateFlow<Rectangle?>(null)
     val displayScalingFactor = getDisplayScalingFactor()
-    val detectionAccuracy = 0.99
+    val detectionAccuracy = 1.00
     val clickTime = 3
     val clickInterval = 10
     val nextImageInterval = 100
