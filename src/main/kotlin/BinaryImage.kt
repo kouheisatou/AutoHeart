@@ -65,7 +65,6 @@ open class BinaryImage(
 
     suspend fun find(
         templateImage: BinaryImage,
-        currentSearchCoordinateChanged: ((coordinate: Vector, progress: Float) -> Unit)? = null,
     ): List<Rectangle> {
         if (templateImage.representativePixel == null) throw ImageConversionException("No representativePixel")
         val flippedImage = templateImage.flipped()
@@ -79,7 +78,6 @@ open class BinaryImage(
         // row:y, column:x
         val weightMap = Array(height) { Array(width) { 0 } }
         for (whitePixel in whitePixels.withIndex()) {
-            currentSearchCoordinateChanged?.invoke(whitePixel.value, whitePixel.index.toFloat() / whitePixels.size)
 
             for (templateWhitePixel in flippedImage.whitePixels) {
                 val x = whitePixel.value.x - flippedImage.representativePixel.x + templateWhitePixel.x

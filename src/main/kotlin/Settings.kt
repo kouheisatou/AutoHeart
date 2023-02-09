@@ -20,13 +20,12 @@ object Settings {
 
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)
-    val stopCount = 100
+    val stopCount = mutableStateOf(100)
 }
 
 
 @Composable
 fun SettingScreen() {
-
 
     Scaffold(
         topBar = {
@@ -39,7 +38,7 @@ fun SettingScreen() {
                         Spacer(modifier = Modifier.weight(1f))
                         IconButton(onClick = {
                             state.value = MainWindowState.AutoClickerState
-                        }){
+                        }) {
                             Text(">")
                         }
                     }
@@ -50,7 +49,23 @@ fun SettingScreen() {
 
         Column {
             Row {
-                Text("キャプチャエリア")
+                var formError by remember { mutableStateOf(false) }
+                OutlinedTextField(
+                    value = Settings.stopCount.value.toString(),
+                    onValueChange = {
+                        try {
+                            Settings.stopCount.value = it.toInt()
+                            formError = false
+                        } catch (e: Exception) {
+                            formError = true
+                        }
+                    },
+                    isError = formError,
+                )
+                Text("回キャプチャしたら自動終了する")
+            }
+            Row {
+                Text("自動クリックエリアを選択してください")
                 Button(
                     onClick = {
                         state.value = MainWindowState.CaptureAreaSelectorState
@@ -61,11 +76,13 @@ fun SettingScreen() {
                             bitmap = Settings.captureAreaImage.value!!.toComposeImageBitmap(),
                             null
                         )
+                    } else {
+                        Text("ここを押してエリアを指定")
                     }
                 }
             }
             Row {
-                Text("検索画像")
+                Text("画面内のハートの領域を選択してください")
                 Button(
                     onClick = {
                         state.value = MainWindowState.TemplateAreaSelectorState
@@ -76,6 +93,8 @@ fun SettingScreen() {
                             bitmap = Settings.templateAreaImage.value!!.toComposeImageBitmap(),
                             null
                         )
+                    } else {
+                        Text("ここを押して画像をキャプチャ")
                     }
                 }
             }

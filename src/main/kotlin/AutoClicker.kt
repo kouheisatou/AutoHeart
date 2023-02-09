@@ -54,6 +54,8 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 
             while (processing.value) {
 
+                percentage.value = count.toFloat() / Settings.stopCount.value.toFloat()
+
                 // 自動クリックエリアのキャプチャを取得
                 capturedImage.value = Robot().createScreenCapture(area)
 
@@ -62,12 +64,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 
                 // 画像検索
                 try {
-                    searchResult.value = capturedImage.find(
-                        binaryTemplateImage,
-                        currentSearchCoordinateChanged = { _, p ->
-                            percentage.value = p
-                        },
-                    )
+                    searchResult.value = capturedImage.find(binaryTemplateImage)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     println(e.message)
@@ -125,7 +122,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 }
 
                 // stopCountを超えたら自動終了
-                if (count >= Settings.stopCount) {
+                if (count >= Settings.stopCount.value) {
                     stop()
                     break
                 }
@@ -180,6 +177,10 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                 } else {
                     Text("Start")
                 }
+            }
+
+            if(autoClicker.processing.value){
+                Text("マウスを自動クリック範囲外に持っていくと終了")
             }
         }
 
