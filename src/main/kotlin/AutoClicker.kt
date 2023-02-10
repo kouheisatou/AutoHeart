@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.nativeKeyCode
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -161,6 +163,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AutoClickerComponent(autoClicker: AutoClicker) {
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
@@ -231,6 +234,10 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                 Image(
                     bitmap = autoClicker.weightMapAlphaImage.value!!.toComposeImageBitmap(),
                     null,
+                    modifier = Modifier
+                        .onPointerEvent(PointerEventType.Press) {
+                            weightDebugCursorPosition.value = it.changes.first().position
+                        }
                 )
             }
 
@@ -278,7 +285,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         )
                         .height(1.dp)
                         .width(1.dp)
-                        .background(color = Color.Blue),
+                        .background(color = Color.Black),
                 )
                 if (cursorPosition.x.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap.size && cursorPosition.y.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap[0].size) {
                     Text(

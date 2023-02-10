@@ -12,7 +12,8 @@ import java.awt.image.BufferedImage
 object Settings {
     val captureArea = MutableStateFlow<Rectangle?>(null)
     val templateArea = MutableStateFlow<Rectangle?>(null)
-    val displayScalingFactor = getDisplayScalingFactor()
+    val displayScalingFactor
+        get() = getDisplayScalingFactor()
     val detectionAccuracy = mutableStateOf(1.00)
     val clickTime = 3
     val clickInterval = 10

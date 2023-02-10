@@ -39,10 +39,10 @@ fun main() {
             title = "AutoHart",
             onKeyEvent = {
                 when(it.key){
-                    Key.DirectionRight -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x +1, weightDebugCursorPosition.value.y)
-                    Key.DirectionLeft -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x -1, weightDebugCursorPosition.value.y)
-                    Key.DirectionUp -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x, weightDebugCursorPosition.value.y -1)
-                    Key.DirectionDown -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x, weightDebugCursorPosition.value.y +1)
+                    Key.DirectionRight -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x +1f / Settings.displayScalingFactor.toFloat(), weightDebugCursorPosition.value.y)
+                    Key.DirectionLeft -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x -1f / Settings.displayScalingFactor.toFloat(), weightDebugCursorPosition.value.y)
+                    Key.DirectionUp -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x, weightDebugCursorPosition.value.y -1f / Settings.displayScalingFactor.toFloat())
+                    Key.DirectionDown -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x, weightDebugCursorPosition.value.y +1 / Settings.displayScalingFactor.toFloat())
                 }
                 false
             }
