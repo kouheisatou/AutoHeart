@@ -230,15 +230,17 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                     }
             )
             // 重みマップアルファ画像
-            if (autoClicker.weightMapAlphaImage.value != null) {
-                Image(
-                    bitmap = autoClicker.weightMapAlphaImage.value!!.toComposeImageBitmap(),
-                    null,
-                    modifier = Modifier
-                        .onPointerEvent(PointerEventType.Press) {
-                            weightDebugCursorPosition.value = it.changes.first().position
-                        }
-                )
+            if (Settings.debugMode) {
+                if (autoClicker.weightMapAlphaImage.value != null) {
+                    Image(
+                        bitmap = autoClicker.weightMapAlphaImage.value!!.toComposeImageBitmap(),
+                        null,
+                        modifier = Modifier
+                            .onPointerEvent(PointerEventType.Press) {
+                                weightDebugCursorPosition.value = it.changes.first().position
+                            }
+                    )
+                }
             }
 
             // search result point
@@ -260,43 +262,48 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         )
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Red)
                 )
-                Box(
-                    modifier = Modifier
-                        .offsetMultiResolutionDisplay(
-                            result.representativePointX.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
-                            result.representativePointY.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
-                            Settings.displayScalingFactor,
-                        )
-                        .width(3.dp)
-                        .height(3.dp)
-                        .background(color = Color.Red)
-                )
+                // representative point
+                if (Settings.debugMode) {
+                    Box(
+                        modifier = Modifier
+                            .offsetMultiResolutionDisplay(
+                                result.representativePointX.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
+                                result.representativePointY.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
+                                Settings.displayScalingFactor,
+                            )
+                            .width(3.dp)
+                            .height(3.dp)
+                            .background(color = Color.Red)
+                    )
+                }
             }
 
             // 重みデバッグ用カーソル
-            if (autoClicker.binaryCapturedImage?.weightMap != null) {
-                val cursorPosition = weightDebugCursorPosition.value
-                Box(
-                    modifier = Modifier
-                        .offsetMultiResolutionDisplay(
-                            cursorPosition.x,
-                            cursorPosition.y,
-                            Settings.displayScalingFactor
-                        )
-                        .height(1.dp)
-                        .width(1.dp)
-                        .background(color = Color.Black),
-                )
-                if (cursorPosition.x.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap.size && cursorPosition.y.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap[0].size) {
-                    Text(
-                        (autoClicker.binaryCapturedImage!!.weightMap[cursorPosition.x.toInt()][cursorPosition.y.toInt()].toDouble() / autoClicker.binaryCapturedImage!!.maxWeight).toString(),
+            if (Settings.debugMode) {
+                if (autoClicker.binaryCapturedImage?.weightMap != null) {
+                    val cursorPosition = weightDebugCursorPosition.value
+                    Box(
                         modifier = Modifier
                             .offsetMultiResolutionDisplay(
                                 cursorPosition.x,
                                 cursorPosition.y,
                                 Settings.displayScalingFactor
-                            ),
+                            )
+                            .height(1.dp)
+                            .width(1.dp)
+                            .background(color = Color.Black),
                     )
+                    if (cursorPosition.x.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap.size && cursorPosition.y.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap[0].size) {
+                        Text(
+                            String.format("%.2f", autoClicker.binaryCapturedImage!!.weightMap[cursorPosition.x.toInt()][cursorPosition.y.toInt()].toDouble() / autoClicker.binaryCapturedImage!!.maxWeight),
+                            modifier = Modifier
+                                .offsetMultiResolutionDisplay(
+                                    cursorPosition.x,
+                                    cursorPosition.y,
+                                    Settings.displayScalingFactor
+                                ),
+                        )
+                    }
                 }
             }
         }
