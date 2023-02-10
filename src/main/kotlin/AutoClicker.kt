@@ -9,11 +9,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -30,9 +35,10 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
     private val threshold = templateImage.grayScale().edge().calcBinalizeThreshold()
     val binaryTemplateImage = convertBufferedImageToBinaryImage(templateImage, threshold)
     val capturedImage = mutableStateOf<BufferedImage>(Robot().createScreenCapture(area))
+    var binaryCapturedImage: BinaryImage? = null
     val weightImageMap = mutableStateOf<BufferedImage?>(null)
 
-    val searchResult = mutableStateOf<List<Rectangle>>(mutableListOf())
+    val searchResult = mutableStateOf<List<SearchResult>>(mutableListOf())
 
     var processing = mutableStateOf(false)
     var percentage = mutableStateOf(0f)
@@ -60,18 +66,24 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 capturedImage.value = Robot().createScreenCapture(area)
 
                 // 2値画像に変換
-                val capturedImage = convertBufferedImageToBinaryImage(capturedImage.value, threshold)
+                binaryCapturedImage = convertBufferedImageToBinaryImage(capturedImage.value, threshold)
 
                 // 画像検索
                 try {
-                    searchResult.value = capturedImage.find(binaryTemplateImage)
+                    searchResult.value = binaryCapturedImage!!.find(binaryTemplateImage)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     println(e.message)
                 }
 
                 // 画像検索に利用した重みマップを重ねて表示
-                weightImageMap.value = capturedImage.weightMapAlphaImage
+                weightImageMap.value = binaryCapturedImage!!.weightMapAlphaImage
+
+                // debugModeでは1回のキャプチャで終了
+                if (Settings.debugMode) {
+                    stop()
+                    return@launch
+                }
 
                 // マウスを自動クリック範囲外に持っていくと終了
                 if (isCursorOutside()) {
@@ -140,14 +152,15 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 
     fun stop(msg: String? = null) {
         processing.value = false
-        if(msg == null) {
+        if (msg == null) {
             println("STOP")
-        }else{
+        } else {
             println("STOP : $msg")
         }
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AutoClickerComponent(autoClicker: AutoClicker) {
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
@@ -179,14 +192,16 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                 }
             }
 
-            if(autoClicker.processing.value){
+            if (autoClicker.processing.value) {
                 Text("マウスを自動クリック範囲外に持っていくと終了")
             }
         }
 
+        // template画像表示
         if (autoClicker.binaryTemplateImage.representativePixel != null) {
             Box {
                 Image(bitmap = autoClicker.templateImage.toBufferedImage().toComposeImageBitmap(), null)
+                // 代表点
                 Box(
                     modifier = Modifier
                         .width(3.dp)
@@ -201,7 +216,9 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
             }
         }
 
+        // 認識結果
         Box {
+            // キャプチャ画像
             Image(
                 bitmap = autoClicker.capturedImage.value.toComposeImageBitmap(), null,
                 modifier = Modifier
@@ -209,17 +226,61 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         imageSize = it
                     }
             )
-            if (autoClicker.weightImageMap.value != null) {
-                Image(bitmap = autoClicker.weightImageMap.value!!.toComposeImageBitmap(), null)
+            // 重みマップ
+            if (autoClicker.weightImageMap.value != null && autoClicker.binaryCapturedImage != null) {
+                var cursorPosition by remember { mutableStateOf<Offset?>(null) }
+                var weight by remember { mutableStateOf<Double?>(null) }
+                Image(
+                    bitmap = autoClicker.weightImageMap.value!!.toComposeImageBitmap(),
+                    null,
+                    modifier = Modifier
+                        .onPointerEvent(PointerEventType.Move) {
+                            cursorPosition = it.changes.first().position
+                            weight =
+                                autoClicker.binaryCapturedImage!!.weightMap[cursorPosition!!.x.toInt()][cursorPosition!!.y.toInt()].toDouble() / autoClicker.binaryCapturedImage!!.maxWeight
+                        }
+                        .onKeyEvent {
+                            println(it.key)
+                            when(it.key){
+                                Key.DirectionRight -> cursorPosition = Offset(cursorPosition!!.x -1, cursorPosition!!.y)
+                                Key.DirectionLeft -> cursorPosition = Offset(cursorPosition!!.x +1, cursorPosition!!.y)
+                                Key.DirectionDown -> cursorPosition = Offset(cursorPosition!!.x, cursorPosition!!.y -1)
+                                Key.DirectionUp -> cursorPosition = Offset(cursorPosition!!.x, cursorPosition!!.y +1)
+                            }
+                            false
+                        },
+                )
+                if (cursorPosition != null) {
+                    Box(
+                        modifier = Modifier
+                            .offsetMultiResolutionDisplay(
+                                cursorPosition!!.x,
+                                cursorPosition!!.y,
+                                Settings.displayScalingFactor
+                            )
+                            .height(1.dp)
+                            .width(1.dp)
+                            .background(color = Color.Blue),
+                    )
+                    Text(
+                        weight.toString(),
+                        modifier = Modifier
+                            .offsetMultiResolutionDisplay(
+                                cursorPosition!!.x + 10,
+                                cursorPosition!!.y,
+                                Settings.displayScalingFactor
+                            ),
+                    )
+                }
             }
 
             // search result point
-            for (coordinate in autoClicker.searchResult.value) {
+            for (result in autoClicker.searchResult.value) {
                 Box(
                     modifier = Modifier
                         .offsetMultiResolutionDisplay(
-                            coordinate.x.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
-                            coordinate.y.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
+                            result.x.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
+                            result.y.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
                             Settings.displayScalingFactor,
                         )
                         .widthMultiResolutionDisplay(
@@ -231,6 +292,17 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                             Settings.displayScalingFactor
                         )
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Red)
+                )
+                Box(
+                    modifier = Modifier
+                        .offsetMultiResolutionDisplay(
+                            result.representativePointX.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
+                            result.representativePointY.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
+                            Settings.displayScalingFactor,
+                        )
+                        .width(3.dp)
+                        .height(3.dp)
+                        .background(color = Color.Red)
                 )
             }
         }

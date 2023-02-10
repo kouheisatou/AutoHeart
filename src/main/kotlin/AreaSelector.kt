@@ -27,7 +27,10 @@ import kotlin.math.max
 import kotlin.math.min
 
 
-class AreaSelector(val onCloseRequest: () -> Unit, val onSelected: (selectedArea: Rectangle, selectedAreaImage: BufferedImage) -> Unit) {
+class AreaSelector(
+    val onCloseRequest: () -> Unit,
+    val onSelected: (selectedArea: Rectangle, selectedAreaImage: BufferedImage) -> Unit
+) {
     val screenShot: BufferedImage
     val mode = mutableStateOf(AreaSelectorState.Hovering)
     val screenSize: Rectangle
@@ -58,8 +61,7 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
         state = rememberWindowState(WindowPlacement.Fullscreen)
     ) {
         Image(
-            bitmap = areaSelector.screenShot
-                .toComposeImageBitmap(),
+            bitmap = areaSelector.screenShot.toComposeImageBitmap(),
             contentDescription = null,
             modifier = Modifier
                 .width(
@@ -128,7 +130,12 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                         val height = abs(y1 - y2)
                         if (width > 0 && height > 0) {
                             val selectedArea = Rectangle(x, y, width, height)
-                            val selectedAreaImage = areaSelector.screenShot.getSubimage(selectedArea.x, selectedArea.y, selectedArea.width, selectedArea.height)
+                            val selectedAreaImage = areaSelector.screenShot.getSubimage(
+                                selectedArea.x,
+                                selectedArea.y,
+                                selectedArea.width,
+                                selectedArea.height
+                            )
                             areaSelector.onSelected(selectedArea, selectedAreaImage)
                             areaSelector.onCloseRequest()
                         }
@@ -170,7 +177,7 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
 }
 
 @Composable
-fun ImageAreaSelectorScreen(){
+fun ImageAreaSelectorScreen() {
 
     val captureAreaSelector by remember {
         mutableStateOf(
@@ -190,7 +197,7 @@ fun ImageAreaSelectorScreen(){
 }
 
 @Composable
-fun TemplateImageAreaSelectorScreen(){
+fun TemplateImageAreaSelectorScreen() {
     val captureAreaSelector by remember {
         mutableStateOf(
             AreaSelector(

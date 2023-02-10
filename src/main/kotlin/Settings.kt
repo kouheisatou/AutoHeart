@@ -13,7 +13,7 @@ object Settings {
     val captureArea = MutableStateFlow<Rectangle?>(null)
     val templateArea = MutableStateFlow<Rectangle?>(null)
     val displayScalingFactor = getDisplayScalingFactor()
-    val detectionAccuracy = 1.00
+    val detectionAccuracy = mutableStateOf(1.00)
     val clickTime = 3
     val clickInterval = 10
     val nextImageInterval = 100
@@ -21,6 +21,7 @@ object Settings {
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)
     val stopCount = mutableStateOf(100)
+    val debugMode = true
 }
 
 
@@ -63,6 +64,21 @@ fun SettingScreen() {
                     isError = formError,
                 )
                 Text("回キャプチャしたら自動終了する")
+            }
+            Row {
+                var formError by remember { mutableStateOf(false) }
+                Text("検出閾値")
+                OutlinedTextField(
+                    value = Settings.detectionAccuracy.value.toString(),
+                    onValueChange = {
+                        try {
+                            Settings.detectionAccuracy.value = it.toDouble()
+                            formError = false
+                        }catch (e: Exception){
+                            formError = true
+                        }
+                    }
+                )
             }
             Row {
                 Text("自動クリックエリアを選択してください")

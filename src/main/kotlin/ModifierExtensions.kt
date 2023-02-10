@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+// 必ず最初に適用する
 fun Modifier.offsetMultiResolutionDisplay(x: Float? = null, y: Float? = null, displayScaleFactor: Double): Modifier {
     return if (x != null && y != null) {
         offset((x / displayScaleFactor).dp, (y / displayScaleFactor).dp)

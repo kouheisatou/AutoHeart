@@ -14,6 +14,8 @@ open class BinaryImage(
 
     val whitePixels: Array<Vector>
     val representativePixel: Vector?
+    val weightMap = Array(width) { Array(height) { 0 } }
+    var maxWeight = 0
     val weightMapAlphaImage = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
 
     init {
@@ -65,37 +67,33 @@ open class BinaryImage(
 
     suspend fun find(
         templateImage: BinaryImage,
-    ): List<Rectangle> {
+    ): List<SearchResult> {
         if (templateImage.representativePixel == null) throw ImageConversionException("No representativePixel")
         val flippedImage = templateImage.flipped()
         flippedImage.representativePixel!!
 
-        var maxWeight = 0
-        // first: bounding box
-        // second: representative point coordinate
-        val results = mutableListOf<Rectangle>()
+        val results = mutableListOf<SearchResult>()
 
         // row:y, column:x
-        val weightMap = Array(height) { Array(width) { 0 } }
         for (whitePixel in whitePixels.withIndex()) {
 
             for (templateWhitePixel in flippedImage.whitePixels) {
                 val x = whitePixel.value.x - flippedImage.representativePixel.x + templateWhitePixel.x
                 val y = whitePixel.value.y - flippedImage.representativePixel.y + templateWhitePixel.y
                 if ((y in 0 until height) && (x in 0 until width)) {
-                    weightMap[y][x]++
-                    if (maxWeight < weightMap[y][x]) {
-                        maxWeight = weightMap[y][x]
+                    weightMap[x][y]++
+                    if (maxWeight < weightMap[x][y]) {
+                        maxWeight = weightMap[x][y]
                     }
                 }
             }
         }
 
-        for (y in weightMap.indices) {
-            for (x in weightMap[y].indices) {
+        for (x in weightMap.indices) {
+            for (y in weightMap[x].indices) {
 
                 val alpha = if (maxWeight != 0) {
-                    0xff * weightMap[y][x] / maxWeight
+                    0xff * weightMap[x][y] / maxWeight
                 } else {
                     0x00
                 }
@@ -105,7 +103,7 @@ open class BinaryImage(
                 val color = (alpha shl 24) + (red shl 16) + (green shl 8) + blue
                 weightMapAlphaImage.setRGB(x, y, color)
 
-                if (weightMap[y][x].toDouble() / templateImage.whitePixels.size >= Settings.detectionAccuracy) {
+                if (weightMap[x][y].toDouble() / templateImage.whitePixels.size >= Settings.detectionAccuracy.value) {
                     val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
                     val templateImageCoordinateY = y - (templateImage.height - templateImage.representativePixel.y)
                     if (templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height) {
@@ -118,14 +116,17 @@ open class BinaryImage(
                         }
 
                         if (!alreadyRegistered) {
-                            val result = Rectangle(
+                            val result = SearchResult(
                                 templateImageCoordinateX,
                                 templateImageCoordinateY,
                                 templateImage.width,
-                                templateImage.height
+                                templateImage.height,
+                                weightMap[x][y].toDouble() / templateImage.whitePixels.size,
+                                x,
+                                y,
                             )
                             results.add(result)
-                            println("boundingBox=(x=${result.x} y=${result.y} width=${result.width} height=${result.height}) representativePoint=(${result.x},${result.y}) weight=${weightMap[y][x].toDouble() / templateImage.whitePixels.size}")
+                            println(result)
                         }
                     }
                 }
