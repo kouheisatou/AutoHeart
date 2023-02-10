@@ -14,11 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -29,17 +25,18 @@ import java.awt.MouseInfo
 import java.awt.Rectangle
 import java.awt.Robot
 import java.awt.event.InputEvent
+import java.awt.event.KeyEvent
 import java.awt.image.BufferedImage
+
+var weightDebugCursorPosition = mutableStateOf(Offset(0f, 0f))
 
 class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
     private val threshold = templateImage.grayScale().edge().calcBinalizeThreshold()
     val binaryTemplateImage = convertBufferedImageToBinaryImage(templateImage, threshold)
     val capturedImage = mutableStateOf<BufferedImage>(Robot().createScreenCapture(area))
     var binaryCapturedImage: BinaryImage? = null
-    val weightImageMap = mutableStateOf<BufferedImage?>(null)
-
+    val weightMapAlphaImage = mutableStateOf<BufferedImage?>(null)
     val searchResult = mutableStateOf<List<SearchResult>>(mutableListOf())
-
     var processing = mutableStateOf(false)
     var percentage = mutableStateOf(0f)
     private var count = 0
@@ -77,7 +74,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 }
 
                 // 画像検索に利用した重みマップを重ねて表示
-                weightImageMap.value = binaryCapturedImage!!.weightMapAlphaImage
+                weightMapAlphaImage.value = binaryCapturedImage!!.weightMapAlphaImage
 
                 // debugModeでは1回のキャプチャで終了
                 if (Settings.debugMode) {
@@ -158,9 +155,12 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
             println("STOP : $msg")
         }
     }
+
+    fun onKeyEvent(keyEvent: KeyEvent) {
+
+    }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AutoClickerComponent(autoClicker: AutoClicker) {
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
@@ -226,52 +226,12 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         imageSize = it
                     }
             )
-            // 重みマップ
-            if (autoClicker.weightImageMap.value != null && autoClicker.binaryCapturedImage != null) {
-                var cursorPosition by remember { mutableStateOf<Offset?>(null) }
-                var weight by remember { mutableStateOf<Double?>(null) }
+            // 重みマップアルファ画像
+            if (autoClicker.weightMapAlphaImage.value != null) {
                 Image(
-                    bitmap = autoClicker.weightImageMap.value!!.toComposeImageBitmap(),
+                    bitmap = autoClicker.weightMapAlphaImage.value!!.toComposeImageBitmap(),
                     null,
-                    modifier = Modifier
-                        .onPointerEvent(PointerEventType.Move) {
-                            cursorPosition = it.changes.first().position
-                            weight =
-                                autoClicker.binaryCapturedImage!!.weightMap[cursorPosition!!.x.toInt()][cursorPosition!!.y.toInt()].toDouble() / autoClicker.binaryCapturedImage!!.maxWeight
-                        }
-                        .onKeyEvent {
-                            println(it.key)
-                            when(it.key){
-                                Key.DirectionRight -> cursorPosition = Offset(cursorPosition!!.x -1, cursorPosition!!.y)
-                                Key.DirectionLeft -> cursorPosition = Offset(cursorPosition!!.x +1, cursorPosition!!.y)
-                                Key.DirectionDown -> cursorPosition = Offset(cursorPosition!!.x, cursorPosition!!.y -1)
-                                Key.DirectionUp -> cursorPosition = Offset(cursorPosition!!.x, cursorPosition!!.y +1)
-                            }
-                            false
-                        },
                 )
-                if (cursorPosition != null) {
-                    Box(
-                        modifier = Modifier
-                            .offsetMultiResolutionDisplay(
-                                cursorPosition!!.x,
-                                cursorPosition!!.y,
-                                Settings.displayScalingFactor
-                            )
-                            .height(1.dp)
-                            .width(1.dp)
-                            .background(color = Color.Blue),
-                    )
-                    Text(
-                        weight.toString(),
-                        modifier = Modifier
-                            .offsetMultiResolutionDisplay(
-                                cursorPosition!!.x + 10,
-                                cursorPosition!!.y,
-                                Settings.displayScalingFactor
-                            ),
-                    )
-                }
             }
 
             // search result point
@@ -304,6 +264,33 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         .height(3.dp)
                         .background(color = Color.Red)
                 )
+            }
+
+            // 重みデバッグ用カーソル
+            if (autoClicker.binaryCapturedImage?.weightMap != null) {
+                val cursorPosition = weightDebugCursorPosition.value
+                Box(
+                    modifier = Modifier
+                        .offsetMultiResolutionDisplay(
+                            cursorPosition.x,
+                            cursorPosition.y,
+                            Settings.displayScalingFactor
+                        )
+                        .height(1.dp)
+                        .width(1.dp)
+                        .background(color = Color.Blue),
+                )
+                if (cursorPosition.x.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap.size && cursorPosition.y.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap[0].size) {
+                    Text(
+                        (autoClicker.binaryCapturedImage!!.weightMap[cursorPosition.x.toInt()][cursorPosition.y.toInt()].toDouble() / autoClicker.binaryCapturedImage!!.maxWeight).toString(),
+                        modifier = Modifier
+                            .offsetMultiResolutionDisplay(
+                                cursorPosition.x,
+                                cursorPosition.y,
+                                Settings.displayScalingFactor
+                            ),
+                    )
+                }
             }
         }
     }
