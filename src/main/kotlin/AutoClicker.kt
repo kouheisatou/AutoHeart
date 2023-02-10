@@ -226,17 +226,15 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                     }
             )
             // 重みマップアルファ画像
-            if (Settings.debugMode) {
-                if (autoClicker.weightMapAlphaImage.value != null) {
-                    Image(
-                        bitmap = autoClicker.weightMapAlphaImage.value!!.toComposeImageBitmap(),
-                        null,
-                        modifier = Modifier
-                            .onPointerEvent(PointerEventType.Press) {
-                                weightDebugCursorPosition.value = it.changes.first().position
-                            }
-                    )
-                }
+            if (autoClicker.weightMapAlphaImage.value != null) {
+                Image(
+                    bitmap = autoClicker.weightMapAlphaImage.value!!.toComposeImageBitmap(),
+                    null,
+                    modifier = Modifier
+                        .onPointerEvent(PointerEventType.Press) {
+                            weightDebugCursorPosition.value = it.changes.first().position
+                        }
+                )
             }
 
             // search result point

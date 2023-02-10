@@ -1,4 +1,3 @@
-import java.awt.Rectangle
 import java.awt.image.BufferedImage
 
 const val BLACK = false
@@ -53,7 +52,7 @@ open class BinaryImage(
         return bi
     }
 
-    private fun flipped(): BinaryImage {
+    fun flipped(): BinaryImage {
 
         val copiedBitmap = Array(width * height) { BLACK }
 
@@ -65,12 +64,38 @@ open class BinaryImage(
         return BinaryImage(width, height, copiedBitmap)
     }
 
-    suspend fun find(
-        templateImage: BinaryImage,
-    ): List<SearchResult> {
+    // 同じ画像を反転して重ね合わせて、画像内で正しいtemplateが検出された時の重み平均の値をあらかじめ算出する
+    fun calcCorrectWeightAverage(flippedBinaryImage: BinaryImage): Double {
+        representativePixel!!
+        flippedBinaryImage.representativePixel!!
+
+        val weightMap = Array(width) { Array(height) { 0 } }
+        for (whitePixel in whitePixels) {
+            for (flippedBinaryImageWhitePixel in flippedBinaryImage.whitePixels) {
+                val x = whitePixel.x - flippedBinaryImage.representativePixel.x + flippedBinaryImageWhitePixel.x
+                val y = whitePixel.y - flippedBinaryImage.representativePixel.y + flippedBinaryImageWhitePixel.y
+                if (x in 0 until width && y in 0 until height) {
+                    weightMap[x][y]++
+                }
+            }
+        }
+
+        var weightSum = 0
+        for (x in weightMap.indices) {
+            for (y in weightMap[x].indices) {
+                weightSum += weightMap[x][y]
+            }
+        }
+        return weightSum.toDouble() / (width * height).toDouble()
+    }
+
+    suspend fun find(templateImage: BinaryImage): List<SearchResult> {
         if (templateImage.representativePixel == null) throw ImageConversionException("No representativePixel")
         val flippedImage = templateImage.flipped()
         flippedImage.representativePixel!!
+
+        // 正しい画像が検出された時の重み平均を計算
+        val correctWeightAverage = calcCorrectWeightAverage(flippedImage)
 
         val results = mutableListOf<SearchResult>()
 
@@ -103,45 +128,49 @@ open class BinaryImage(
                 val color = (alpha shl 24) + (red shl 16) + (green shl 8) + blue
                 weightMapAlphaImage.setRGB(x, y, color)
 
-                if (weightMap[x][y].toDouble() / templateImage.whitePixels.size >= Settings.detectionAccuracy.value) {
-                    val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
-                    val templateImageCoordinateY = y - (templateImage.height - templateImage.representativePixel.y)
-                    if (templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height) {
+                // 重みが閾値を下回っていたら除外
+                if (weightMap[x][y].toDouble() / templateImage.whitePixels.size < Settings.detectionThreshold.value) continue
 
-                        var alreadyRegistered = false
-                        for (coordinate in results) {
-                            if ((templateImageCoordinateX * 2 + templateImage.width) / 2 in coordinate.x..coordinate.x + templateImage.width && (templateImageCoordinateY * 2 + templateImage.height) / 2 in coordinate.y..coordinate.y + templateImage.height) {
-                                alreadyRegistered = true
-                            }
-                        }
-                        if (alreadyRegistered) continue
+                val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
+                val templateImageCoordinateY = y - (templateImage.height - templateImage.representativePixel.y)
+                // 走査位置が画像の外にある時除外
+                if (!(templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height)) continue
 
-                        var weightSum = 0
-                        for (dx in 0 until templateImage.width) {
-                            for (dy in 0 until templateImage.height) {
-                                if (templateImageCoordinateX + dx in 0 until width && templateImageCoordinateY + dy in 0 until height) {
-                                    weightSum += weightMap[templateImageCoordinateX + dx][templateImageCoordinateY + dy]
-                                }
-                            }
-                        }
-                        val weightAvg = weightSum.toDouble() / (templateImage.width * templateImage.height).toDouble()
-//                        if(weightAvg >= 15.0) continue
-
-                        val result = SearchResult(
-                            Settings.getNewBoundingBoxId(),
-                            templateImageCoordinateX,
-                            templateImageCoordinateY,
-                            templateImage.width,
-                            templateImage.height,
-                            weightMap[x][y].toDouble() / templateImage.whitePixels.size,
-                            weightAvg,
-                            x,
-                            y,
-                        )
-                        results.add(result)
-                        println(result)
+                var alreadyRegistered = false
+                for (coordinate in results) {
+                    if ((templateImageCoordinateX * 2 + templateImage.width) / 2 in coordinate.x..coordinate.x + templateImage.width && (templateImageCoordinateY * 2 + templateImage.height) / 2 in coordinate.y..coordinate.y + templateImage.height) {
+                        alreadyRegistered = true
                     }
                 }
+                // 検出範囲が被っていたら除外
+                if (alreadyRegistered) continue
+
+                var weightSum = 0
+                for (dx in 0 until templateImage.width) {
+                    for (dy in 0 until templateImage.height) {
+                        if (templateImageCoordinateX + dx in 0 until width && templateImageCoordinateY + dy in 0 until height) {
+                            weightSum += weightMap[templateImageCoordinateX + dx][templateImageCoordinateY + dy]
+                        }
+                    }
+                }
+                val weightAvg = weightSum.toDouble() / (templateImage.width * templateImage.height).toDouble()
+                // 正しいweightAverageよりも大幅に大きかったら除外
+                if (weightAvg >= correctWeightAverage + Settings.weightAverageThreshold.value) continue
+
+                val result = SearchResult(
+                    Settings.getNewBoundingBoxId(),
+                    templateImageCoordinateX,
+                    templateImageCoordinateY,
+                    templateImage.width,
+                    templateImage.height,
+                    weightMap[x][y].toDouble(),
+                    weightMap[x][y].toDouble() / templateImage.whitePixels.size,
+                    weightAvg,
+                    x,
+                    y,
+                )
+                results.add(result)
+                println(result)
             }
         }
         return results
