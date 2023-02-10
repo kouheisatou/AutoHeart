@@ -1,4 +1,5 @@
 import java.awt.image.BufferedImage
+import kotlin.math.abs
 
 const val BLACK = false
 const val WHITE = true
@@ -16,6 +17,7 @@ open class BinaryImage(
     val weightMap = Array(width) { Array(height) { 0 } }
     var maxWeight = 0
     val weightMapAlphaImage = BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
+    var boundingBoxCount = 0L
 
     init {
         val whitePixels = mutableListOf<Vector>()
@@ -65,10 +67,13 @@ open class BinaryImage(
     }
 
     // 同じ画像を反転して重ね合わせて、画像内で正しいtemplateが検出された時の重み平均の値をあらかじめ算出する
-    fun calcCorrectWeightAverage(flippedBinaryImage: BinaryImage): Double {
+    fun calcSteepThreshold(flippedBinaryImage: BinaryImage): Double {
         representativePixel!!
         flippedBinaryImage.representativePixel!!
 
+        var maxWeight = 0
+        var maxWeightX = 0
+        var maxWeightY = 0
         val weightMap = Array(width) { Array(height) { 0 } }
         for (whitePixel in whitePixels) {
             for (flippedBinaryImageWhitePixel in flippedBinaryImage.whitePixels) {
@@ -76,17 +81,38 @@ open class BinaryImage(
                 val y = whitePixel.y - flippedBinaryImage.representativePixel.y + flippedBinaryImageWhitePixel.y
                 if (x in 0 until width && y in 0 until height) {
                     weightMap[x][y]++
+                    if(maxWeight < weightMap[x][y]){
+                        maxWeight = weightMap[x][y]
+                        maxWeightX = x
+                        maxWeightY = y
+                    }
                 }
             }
         }
 
-        var weightSum = 0
-        for (x in weightMap.indices) {
-            for (y in weightMap[x].indices) {
-                weightSum += weightMap[x][y]
-            }
+        val d = Settings.steepDelta
+        var steepSum = 0.0
+        var availableSteepValueCount = 0
+        if(maxWeightX + d in 0 until width){
+            steepSum += abs((weightMap[maxWeightX+d][maxWeightY] - weightMap[maxWeightX][maxWeightY]).toDouble()/d)
+            availableSteepValueCount++
         }
-        return weightSum.toDouble() / (width * height).toDouble()
+        if(maxWeightX - d in 0 until width){
+            steepSum += abs((weightMap[maxWeightX][maxWeightY] - weightMap[maxWeightX-d][maxWeightY]).toDouble()/d)
+            availableSteepValueCount++
+        }
+        if(maxWeightY + d in 0 until height){
+            steepSum += abs((weightMap[maxWeightX][maxWeightY+d] - weightMap[maxWeightX][maxWeightY]).toDouble()/d)
+            availableSteepValueCount++
+        }
+        if(maxWeightY - d in 0 until height){
+            steepSum += abs((weightMap[maxWeightX][maxWeightY] - weightMap[maxWeightX][maxWeightY-d]).toDouble()/d)
+            availableSteepValueCount++
+        }
+        println(steepSum)
+        println(availableSteepValueCount)
+        println(steepSum/availableSteepValueCount)
+        return steepSum/availableSteepValueCount
     }
 
     suspend fun find(templateImage: BinaryImage): List<SearchResult> {
@@ -94,8 +120,8 @@ open class BinaryImage(
         val flippedImage = templateImage.flipped()
         flippedImage.representativePixel!!
 
-        // 正しい画像が検出された時の重み平均を計算
-//        val correctWeightAverage = calcCorrectWeightAverage(flippedImage)
+        // 正しい画像が検出された時の重みの傾きを計算
+        val steepThreshold = calcSteepThreshold(flippedImage)
 
         val results = mutableListOf<SearchResult>()
 
@@ -131,9 +157,34 @@ open class BinaryImage(
                 // 重みが閾値を下回っていたら除外
                 if (weightMap[x][y].toDouble() / templateImage.whitePixels.size < Settings.detectionThreshold.value) continue
 
+                // 上下左右の重みの傾きの平均値を求める
+                val d = Settings.steepDelta
+                var steepSum = 0.0
+                var availableSteepValueCount = 0
+                if(x + d in 0 until width){
+                    steepSum += abs((weightMap[x+d][y] - weightMap[x][y]).toDouble()/d)
+                    availableSteepValueCount++
+                }
+                if(x - d in 0 until width){
+                    steepSum += abs((weightMap[x][y] - weightMap[x-d][y]).toDouble()/d)
+                    availableSteepValueCount++
+                }
+                if(y + d in 0 until height){
+                    steepSum += abs((weightMap[x][y+d] - weightMap[x][y]).toDouble()/d)
+                    availableSteepValueCount++
+                }
+                if(y - d in 0 until height){
+                    steepSum += abs((weightMap[x][y] - weightMap[x][y-d]).toDouble()/d)
+                    availableSteepValueCount++
+                }
+                val steepAverage = steepSum / availableSteepValueCount
+                // 重みの傾きが事前に計算した正しい傾きより大幅に小さければ除外
+//                if(steepAverage < steepThreshold + 3.0) continue
+                if(steepAverage < 12.0) continue
+
                 val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
                 val templateImageCoordinateY = y - (templateImage.height - templateImage.representativePixel.y)
-                // 走査位置が画像の外にある時除外
+                // template画像の左上端が画像の外にある時除外
                 if (!(templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height)) continue
 
                 var alreadyRegistered = false
@@ -161,7 +212,7 @@ open class BinaryImage(
                 **/
 
                 val result = SearchResult(
-                    Settings.getNewBoundingBoxId(),
+                    boundingBoxCount++,
                     templateImageCoordinateX,
                     templateImageCoordinateY,
                     templateImage.width,
@@ -170,6 +221,7 @@ open class BinaryImage(
                     weightMap[x][y].toDouble() / templateImage.whitePixels.size,
                     x,
                     y,
+                    steepAverage,
                 )
                 results.add(result)
                 println(result)

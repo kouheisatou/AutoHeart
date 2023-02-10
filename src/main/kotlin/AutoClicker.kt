@@ -243,6 +243,8 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
 
             // search result point
             for (result in autoClicker.searchResult.value) {
+                Text(result.id.toString(), modifier = Modifier.offsetMultiResolutionDisplay(result.x.toFloat(), result.y.toFloat(), Settings.displayScalingFactor))
+                // bounding box
                 Box(
                     modifier = Modifier
                         .offsetMultiResolutionDisplay(

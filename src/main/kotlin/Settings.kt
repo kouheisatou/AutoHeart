@@ -14,7 +14,7 @@ object Settings {
     val templateArea = MutableStateFlow<Rectangle?>(null)
     val displayScalingFactor
         get() = getDisplayScalingFactor()
-    val detectionThreshold = mutableStateOf(1.00)
+    val detectionThreshold = mutableStateOf(0.60)
     val clickTime = 3
     val clickInterval = 10
     val nextImageInterval = 100
@@ -22,10 +22,8 @@ object Settings {
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)
     val stopCount = mutableStateOf(100)
-    val testMode = mutableStateOf(false)
-    private var sequence = 0
-
-    fun getNewBoundingBoxId() = sequence++
+    val testMode = mutableStateOf(true)
+    val steepDelta = 2
 }
 
 
