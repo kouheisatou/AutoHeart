@@ -14,8 +14,7 @@ object Settings {
     val templateArea = MutableStateFlow<Rectangle?>(null)
     val displayScalingFactor
         get() = getDisplayScalingFactor()
-    val detectionThreshold = mutableStateOf(0.60)
-    val weightAverageThreshold = mutableStateOf(0.30)
+    val detectionThreshold = mutableStateOf(1.00)
     val clickTime = 3
     val clickInterval = 10
     val nextImageInterval = 100
@@ -78,21 +77,6 @@ fun SettingScreen() {
                     onValueChange = {
                         try {
                             Settings.detectionThreshold.value = it.toDouble()
-                            formError = false
-                        }catch (e: Exception){
-                            formError = true
-                        }
-                    }
-                )
-            }
-            Row {
-                var formError by remember { mutableStateOf(false) }
-                Text("判定の甘さ")
-                OutlinedTextField(
-                    value = Settings.weightAverageThreshold.value.toString(),
-                    onValueChange = {
-                        try {
-                            Settings.weightAverageThreshold.value = it.toDouble()
                             formError = false
                         }catch (e: Exception){
                             formError = true

@@ -95,7 +95,7 @@ open class BinaryImage(
         flippedImage.representativePixel!!
 
         // 正しい画像が検出された時の重み平均を計算
-        val correctWeightAverage = calcCorrectWeightAverage(flippedImage)
+//        val correctWeightAverage = calcCorrectWeightAverage(flippedImage)
 
         val results = mutableListOf<SearchResult>()
 
@@ -136,6 +136,17 @@ open class BinaryImage(
                 // 走査位置が画像の外にある時除外
                 if (!(templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height)) continue
 
+                var alreadyRegistered = false
+                for (coordinate in results) {
+                    if ((templateImageCoordinateX * 2 + templateImage.width) / 2 in coordinate.x..coordinate.x + templateImage.width && (templateImageCoordinateY * 2 + templateImage.height) / 2 in coordinate.y..coordinate.y + templateImage.height) {
+                        alreadyRegistered = true
+                    }
+                }
+                // 検出範囲が被っていたら除外
+                if (alreadyRegistered) continue
+
+                // 重み平均で判定を除外する
+                /**
                 var weightSum = 0
                 for (dx in 0 until templateImage.width) {
                     for (dy in 0 until templateImage.height) {
@@ -147,6 +158,7 @@ open class BinaryImage(
                 val weightAvg = weightSum.toDouble() / (templateImage.width * templateImage.height).toDouble()
                 // 正しいweightAverageよりも大幅に大きかったら除外
                 if (weightAvg >= correctWeightAverage + Settings.weightAverageThreshold.value) continue
+                **/
 
                 val result = SearchResult(
                     Settings.getNewBoundingBoxId(),
@@ -156,7 +168,6 @@ open class BinaryImage(
                     templateImage.height,
                     weightMap[x][y].toDouble(),
                     weightMap[x][y].toDouble() / templateImage.whitePixels.size,
-                    weightAvg,
                     x,
                     y,
                 )
