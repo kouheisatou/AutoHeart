@@ -157,10 +157,6 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
             println("STOP : $msg")
         }
     }
-
-    fun onKeyEvent(keyEvent: KeyEvent) {
-
-    }
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -275,6 +271,13 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                             .height(3.dp)
                             .background(color = Color.Red)
                     )
+
+                    // クリックした部分にかぶるboundingBoxをprint
+                    val cursorPosition = weightDebugCursorPosition.value
+                    if(cursorPosition.x.toInt() in result.x .. result.x + result.width && cursorPosition.y.toInt() in result.y .. result.y + result.height){
+                        print("cursor(${cursorPosition.x},${cursorPosition.y}) ->  ")
+                        println(result)
+                    }
                 }
             }
 

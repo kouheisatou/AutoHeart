@@ -114,20 +114,32 @@ open class BinaryImage(
                                 alreadyRegistered = true
                             }
                         }
+                        if (alreadyRegistered) continue
 
-                        if (!alreadyRegistered) {
-                            val result = SearchResult(
-                                templateImageCoordinateX,
-                                templateImageCoordinateY,
-                                templateImage.width,
-                                templateImage.height,
-                                weightMap[x][y].toDouble() / templateImage.whitePixels.size,
-                                x,
-                                y,
-                            )
-                            results.add(result)
-                            println(result)
+                        var weightSum = 0
+                        for (dx in 0 until templateImage.width) {
+                            for (dy in 0 until templateImage.height) {
+                                if (templateImageCoordinateX + dx in 0 until width && templateImageCoordinateY + dy in 0 until height) {
+                                    weightSum += weightMap[templateImageCoordinateX + dx][templateImageCoordinateY + dy]
+                                }
+                            }
                         }
+                        val weightAvg = weightSum.toDouble() / (templateImage.width * templateImage.height).toDouble()
+//                        if(weightAvg >= 15.0) continue
+
+                        val result = SearchResult(
+                            Settings.getNewBoundingBoxId(),
+                            templateImageCoordinateX,
+                            templateImageCoordinateY,
+                            templateImage.width,
+                            templateImage.height,
+                            weightMap[x][y].toDouble() / templateImage.whitePixels.size,
+                            weightAvg,
+                            x,
+                            y,
+                        )
+                        results.add(result)
+                        println(result)
                     }
                 }
             }

@@ -6,7 +6,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -38,11 +40,13 @@ fun main() {
             },
             title = "AutoHart",
             onKeyEvent = {
-                when(it.key){
-                    Key.DirectionRight -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x +1f / Settings.displayScalingFactor.toFloat(), weightDebugCursorPosition.value.y)
-                    Key.DirectionLeft -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x -1f / Settings.displayScalingFactor.toFloat(), weightDebugCursorPosition.value.y)
-                    Key.DirectionUp -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x, weightDebugCursorPosition.value.y -1f / Settings.displayScalingFactor.toFloat())
-                    Key.DirectionDown -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x, weightDebugCursorPosition.value.y +1 / Settings.displayScalingFactor.toFloat())
+                if(it.type == KeyEventType.KeyDown){
+                    when(it.key){
+                        Key.DirectionRight -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x +1f, weightDebugCursorPosition.value.y)
+                        Key.DirectionLeft -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x -1f, weightDebugCursorPosition.value.y)
+                        Key.DirectionUp -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x, weightDebugCursorPosition.value.y -1f)
+                        Key.DirectionDown -> weightDebugCursorPosition.value = Offset(weightDebugCursorPosition.value.x, weightDebugCursorPosition.value.y +1)
+                    }
                 }
                 false
             }
