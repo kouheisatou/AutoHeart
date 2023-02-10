@@ -136,15 +136,6 @@ open class BinaryImage(
                 // 走査位置が画像の外にある時除外
                 if (!(templateImageCoordinateX in 0 until width && templateImageCoordinateY in 0 until height)) continue
 
-                var alreadyRegistered = false
-                for (coordinate in results) {
-                    if ((templateImageCoordinateX * 2 + templateImage.width) / 2 in coordinate.x..coordinate.x + templateImage.width && (templateImageCoordinateY * 2 + templateImage.height) / 2 in coordinate.y..coordinate.y + templateImage.height) {
-                        alreadyRegistered = true
-                    }
-                }
-                // 検出範囲が被っていたら除外
-                if (alreadyRegistered) continue
-
                 var weightSum = 0
                 for (dx in 0 until templateImage.width) {
                     for (dy in 0 until templateImage.height) {

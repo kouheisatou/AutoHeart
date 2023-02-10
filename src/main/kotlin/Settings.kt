@@ -23,7 +23,7 @@ object Settings {
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)
     val stopCount = mutableStateOf(100)
-    val debugMode = true
+    val testMode = mutableStateOf(false)
     private var sequence = 0
 
     fun getNewBoundingBoxId() = sequence++

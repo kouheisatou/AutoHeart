@@ -27,7 +27,6 @@ import java.awt.MouseInfo
 import java.awt.Rectangle
 import java.awt.Robot
 import java.awt.event.InputEvent
-import java.awt.event.KeyEvent
 import java.awt.image.BufferedImage
 
 var weightDebugCursorPosition = mutableStateOf(Offset(0f, 0f))
@@ -54,8 +53,10 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 
             // マウス位置リセット
             val r = Robot()
-            r.mouseMove(area.x, area.y)
-            r.delay(Settings.clickInterval)
+            if(!Settings.testMode.value) {
+                r.mouseMove(area.x, area.y)
+                r.delay(Settings.clickInterval)
+            }
 
             while (processing.value) {
 
@@ -78,14 +79,8 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 // 画像検索に利用した重みマップを重ねて表示
                 weightMapAlphaImage.value = binaryCapturedImage!!.weightMapAlphaImage
 
-                // debugModeでは1回のキャプチャで終了
-                if (Settings.debugMode) {
-                    stop()
-                    return@launch
-                }
-
                 // マウスを自動クリック範囲外に持っていくと終了
-                if (isCursorOutside()) {
+                if (!Settings.testMode.value && isCursorOutside()) {
                     stop("Mouse moved outside of auto click area.")
                     break
                 }
@@ -98,38 +93,42 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                         continue
                     }
 
-                    // 自動クリック
-                    r.mouseMove(
-                        (area.x + (coordinate.x * 2 + coordinate.width).toFloat() / 2.0f).toInt(),
-                        (area.y + (coordinate.y * 2 + coordinate.height).toFloat() / 2.0f).toInt(),
-                    )
-                    r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
-                    r.delay(Settings.clickTime)
-                    r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+                    if(!Settings.testMode.value) {
+                        // 自動クリック
+                        r.mouseMove(
+                            (area.x + (coordinate.x * 2 + coordinate.width).toFloat() / 2.0f).toInt(),
+                            (area.y + (coordinate.y * 2 + coordinate.height).toFloat() / 2.0f).toInt(),
+                        )
+                        r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
+                        r.delay(Settings.clickTime)
+                        r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
 
-                    // マウスを自動クリック範囲外に持っていくと終了
-                    if (isCursorOutside()) {
-                        stop("Mouse moved outside of auto click area.")
-                        break
-                    }
+                        // マウスを自動クリック範囲外に持っていくと終了
+                        if (isCursorOutside()) {
+                            stop("Mouse moved outside of auto click area.")
+                            break
+                        }
 
-                    // マウス位置リセット（マウスホバーでダイアログが出るwebページを回避するため）
-                    r.mouseMove(area.x, area.y)
-                    r.delay(Settings.clickInterval)
+                        // マウス位置リセット（マウスホバーでダイアログが出るwebページを回避するため）
+                        r.mouseMove(area.x, area.y)
+                        r.delay(Settings.clickInterval)
 
-                    // マウスを自動クリック範囲外に持っていくと終了
-                    if (isCursorOutside()) {
-                        stop("Mouse moved outside of auto click area.")
-                        break
+                        // マウスを自動クリック範囲外に持っていくと終了
+                        if (isCursorOutside()) {
+                            stop("Mouse moved outside of auto click area.")
+                            break
+                        }
                     }
                 }
                 count++
 
                 // クリックすべきものがなくなったらスクロールして次の画像を読み込む
-                if (searchResult.value.isEmpty()) {
-                    r.keyPress(Key.PageDown.nativeKeyCode)
-                    r.delay(Settings.clickTime)
-                    r.keyRelease(Key.PageDown.nativeKeyCode)
+                if(!Settings.testMode.value) {
+                    if (searchResult.value.isEmpty()) {
+                        r.keyPress(Key.PageDown.nativeKeyCode)
+                        r.delay(Settings.clickTime)
+                        r.keyRelease(Key.PageDown.nativeKeyCode)
+                    }
                 }
 
                 // stopCountを超えたら自動終了
@@ -193,6 +192,11 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
 
             if (autoClicker.processing.value) {
                 Text("マウスを自動クリック範囲外に持っていくと終了")
+            }else{
+                Text("テストモード")
+                Switch(Settings.testMode.value, onCheckedChange = {
+                    Settings.testMode.value = it
+                })
             }
         }
 
@@ -257,7 +261,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Red)
                 )
                 // representative point
-                if (Settings.debugMode) {
+                if (Settings.testMode.value) {
                     Box(
                         modifier = Modifier
                             .offsetMultiResolutionDisplay(
@@ -280,7 +284,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
             }
 
             // 重みデバッグ用カーソル
-            if (Settings.debugMode) {
+            if (Settings.testMode.value) {
                 if (autoClicker.binaryCapturedImage?.weightMap != null) {
                     val cursorPosition = weightDebugCursorPosition.value
                     Box(
