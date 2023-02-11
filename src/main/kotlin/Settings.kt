@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.awt.Rectangle
 import java.awt.image.BufferedImage
+import java.text.DecimalFormat
 
 object Settings {
     val captureArea = MutableStateFlow<Rectangle?>(null)
@@ -50,62 +51,49 @@ fun SettingScreen() {
 
         Column {
             Row {
-                var formError by remember { mutableStateOf(false) }
-                Text("自動終了回数")
-                OutlinedTextField(
-                    value = Settings.stopCount.value.toString(),
+                Text("自動終了回数 : ${String.format("%06d", Settings.stopCount.value)}")
+                Slider(
+                    value = Settings.stopCount.value.toFloat(),
                     onValueChange = {
-                        try {
-                            if(it.toInt() < 0){
-                                throw Exception()
-                            }
+                        try{
                             Settings.stopCount.value = it.toInt()
-                            formError = false
-                        } catch (e: Exception) {
-                            formError = true
+                        }catch (e: Exception){
+                            e.printStackTrace()
                         }
                     },
-                    isError = formError,
+                    valueRange = 1f .. 100000f
                 )
             }
             Row {
-                var formError by remember { mutableStateOf(false) }
-                Text("重み閾値")
-                OutlinedTextField(
-                    value = Settings.weightThreshold.value.toString(),
+                Text("重み閾値 : ${DecimalFormat("00.00").format(Settings.weightThreshold.value)}")
+                Slider(
+                    value = Settings.weightThreshold.value.toFloat(),
                     onValueChange = {
-                        try {
-                            if(it.toDouble() < 0 || it.toDouble() >1){
-                                throw Exception()
-                            }
+                        try{
                             Settings.weightThreshold.value = it.toDouble()
-                            formError = false
                         }catch (e: Exception){
-                            formError = true
+                            e.printStackTrace()
                         }
-                    }
+                    },
+                    valueRange = 0f..1f,
                 )
             }
             Row {
-                var formError by remember { mutableStateOf(false) }
-                Text("重み勾配許容度")
-                OutlinedTextField(
-                    value = Settings.steepThresholdAllowance.value.toString(),
+                Text("重み勾配許容度 : ${DecimalFormat("00.00").format(Settings.steepThresholdAllowance.value)}")
+                Slider(
+                    value = Settings.steepThresholdAllowance.value.toFloat(),
                     onValueChange = {
-                        try {
-                            if(it.toDouble() < 0){
-                                throw Exception()
-                            }
+                        try{
                             Settings.steepThresholdAllowance.value = it.toDouble()
-                            formError = false
                         }catch (e: Exception){
-                            formError = true
+                            e.printStackTrace()
                         }
-                    }
+                    },
+                    valueRange = 0f..100f,
                 )
             }
             Row {
-                Text("自動クリックエリアを選択してください")
+                Text("自動クリックエリア")
                 Button(
                     onClick = {
                         state.value = MainWindowState.CaptureAreaSelectorState
@@ -122,7 +110,7 @@ fun SettingScreen() {
                 }
             }
             Row {
-                Text("画面内のハートの領域を選択してください")
+                Text("検索対象画像")
                 Button(
                     onClick = {
                         state.value = MainWindowState.TemplateAreaSelectorState
@@ -134,7 +122,7 @@ fun SettingScreen() {
                             null
                         )
                     } else {
-                        Text("ここを押して画像をキャプチャ")
+                        Text("ここを押して検索対象の画像をキャプチャ")
                     }
                 }
             }
