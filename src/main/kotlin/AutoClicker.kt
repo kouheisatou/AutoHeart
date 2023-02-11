@@ -256,23 +256,17 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                     null,
                     modifier = Modifier
                         .onPointerEvent(PointerEventType.Press) {
-                            weightDebugCursorPosition.value = it.changes.first().position
+                            val cursor = it.changes.first().position
+                            weightDebugCursorPosition.value = Offset(
+                                cursor.x / imageSize.width * autoClicker.weightMapAlphaImage.value!!.width,
+                                cursor.y / imageSize.height * autoClicker.weightMapAlphaImage.value!!.height,
+                            )
                         }
                 )
             }
 
             // search result point
             for (result in autoClicker.searchResult.value) {
-                if (Settings.testMode.value) {
-                    Text(
-                        result.id.toString(),
-                        modifier = Modifier.offsetMultiResolutionDisplay(
-                            result.x.toFloat(),
-                            result.y.toFloat(),
-                            getDisplayScalingFactor(),
-                        )
-                    )
-                }
                 // bounding box
                 Box(
                     modifier = Modifier
@@ -290,7 +284,11 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                             getDisplayScalingFactor(),
                         )
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Red)
-                )
+                ) {
+                    if (Settings.testMode.value) {
+                        Text(result.id.toString())
+                    }
+                }
                 // representative point
                 if (Settings.testMode.value) {
                     Box(
@@ -321,8 +319,8 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         Column(
                             modifier = Modifier
                                 .offsetMultiResolutionDisplay(
-                                    cursorPosition.x,
-                                    cursorPosition.y,
+                                    cursorPosition.x / autoClicker.binaryCapturedImage!!.weightMap.size * imageSize.width,
+                                    cursorPosition.y / autoClicker.binaryCapturedImage!!.weightMap[0].size * imageSize.height,
                                     getDisplayScalingFactor()
                                 ),
                         ) {
@@ -333,14 +331,14 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                                     .background(color = Color.Black),
                             )
                             Text(
-                                "(${cursorPosition.x},${cursorPosition.y})\nweight=" +
+                                "(${cursorPosition.x.toInt()},${cursorPosition.y.toInt()})\nweight=" +
                                         String.format(
                                             "%.2f",
-                                            autoClicker.binaryCapturedImage!!.weightMap[cursorPosition.x.toInt()][cursorPosition.y.toInt()].toDouble() / autoClicker.binaryCapturedImage!!.maxWeight
+                                            autoClicker.binaryCapturedImage!!.weightMap[cursorPosition.x.toInt()][cursorPosition.y.toInt()].toDouble()
                                         ),
                             )
                             LazyColumn {
-                                items(resultPointedByCursor){
+                                items(resultPointedByCursor) {
                                     Text(it.toString())
                                 }
                             }

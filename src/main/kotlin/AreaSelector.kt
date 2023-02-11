@@ -33,11 +33,10 @@ class AreaSelector(
 ) {
     val screenShot: BufferedImage
     val mode = mutableStateOf(AreaSelectorState.Hovering)
-    val screenSize: Rectangle
 
     init {
         val robot = Robot()
-        screenSize = Rectangle(Toolkit.getDefaultToolkit().screenSize)
+        val screenSize = Rectangle(Toolkit.getDefaultToolkit().screenSize)
         screenShot = robot.createScreenCapture(screenSize)
     }
 }
@@ -66,7 +65,7 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
             modifier = Modifier
                 .width(
                     if (window.width > window.height) {
-                        areaSelector.screenSize.width.toFloat() / areaSelector.screenSize.height.toFloat() * window.height.toFloat()
+                        areaSelector.screenShot.width.toFloat() / areaSelector.screenShot.height.toFloat() * window.height.toFloat()
                     } else {
                         window.width.toFloat()
                     }.dp
@@ -75,7 +74,7 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                     if (window.width > window.height) {
                         window.height.toFloat()
                     } else {
-                        areaSelector.screenSize.height.toFloat() / areaSelector.screenSize.width.toFloat() * window.width.toFloat()
+                        areaSelector.screenShot.height.toFloat() / areaSelector.screenShot.width.toFloat() * window.width.toFloat()
                     }.dp
                 )
                 .onPointerEvent(PointerEventType.Move) {
@@ -112,16 +111,16 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                     val position = it.changes.first().position
 
                     if (areaStartX != null && areaStartY != null) {
-                        val x1 = (areaSelector.screenSize.width * min(
+                        val x1 = (areaSelector.screenShot.width * min(
                             max(position.x, 0f), imageSize.width.toFloat()
                         ) / imageSize.width).toInt()
-                        val y1 = (areaSelector.screenSize.height * min(
+                        val y1 = (areaSelector.screenShot.height * min(
                             max(position.y, 0f), imageSize.height.toFloat()
                         ) / imageSize.height).toInt()
-                        val x2 = (areaSelector.screenSize.width * min(
+                        val x2 = (areaSelector.screenShot.width * min(
                             max(areaStartX!!, 0f), imageSize.width.toFloat()
                         ) / imageSize.width).toInt()
-                        val y2 = (areaSelector.screenSize.height * min(
+                        val y2 = (areaSelector.screenShot.height * min(
                             max(areaStartY!!, 0f), imageSize.height.toFloat()
                         ) / imageSize.height).toInt()
                         val x = min(x1, x2)
