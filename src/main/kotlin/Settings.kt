@@ -21,9 +21,10 @@ object Settings {
 
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)
-    val stopCount = mutableStateOf(100)
+    val stopCount = mutableStateOf(10000)
     val testMode = mutableStateOf(true)
     val steepDelta = 2
+    var steepThresholdAllowance = mutableStateOf(12.0)
 }
 
 
@@ -53,10 +54,14 @@ fun SettingScreen() {
         Column {
             Row {
                 var formError by remember { mutableStateOf(false) }
+                Text("自動終了回数")
                 OutlinedTextField(
                     value = Settings.stopCount.value.toString(),
                     onValueChange = {
                         try {
+                            if(it.toInt() < 0){
+                                throw Exception()
+                            }
                             Settings.stopCount.value = it.toInt()
                             formError = false
                         } catch (e: Exception) {
@@ -65,7 +70,6 @@ fun SettingScreen() {
                     },
                     isError = formError,
                 )
-                Text("回キャプチャしたら自動終了する")
             }
             Row {
                 var formError by remember { mutableStateOf(false) }
@@ -74,7 +78,28 @@ fun SettingScreen() {
                     value = Settings.detectionThreshold.value.toString(),
                     onValueChange = {
                         try {
+                            if(it.toDouble() < 0 || it.toDouble() >1){
+                                throw Exception()
+                            }
                             Settings.detectionThreshold.value = it.toDouble()
+                            formError = false
+                        }catch (e: Exception){
+                            formError = true
+                        }
+                    }
+                )
+            }
+            Row {
+                var formError by remember { mutableStateOf(false) }
+                Text("傾き許容度")
+                OutlinedTextField(
+                    value = Settings.steepThresholdAllowance.value.toString(),
+                    onValueChange = {
+                        try {
+                            if(it.toDouble() < 0){
+                                throw Exception()
+                            }
+                            Settings.steepThresholdAllowance.value = it.toDouble()
                             formError = false
                         }catch (e: Exception){
                             formError = true

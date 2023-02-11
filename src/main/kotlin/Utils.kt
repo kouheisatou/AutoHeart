@@ -14,6 +14,16 @@ fun <T> arrayToCSV(array: Array<Array<T>>, outputFile: File) {
     }
 }
 
+fun tench(array: Array<Array<Int>>): Array<Array<Int>>{
+    val result = Array(array[0].size){Array(array.size){0} }
+    for(x in array.indices){
+        for(y in array[x].indices){
+            result[y][x] = array[x][y]
+        }
+    }
+    return result
+}
+
 fun getDisplayScalingFactor(): Double {
     return GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration.defaultTransform.scaleX
 }
