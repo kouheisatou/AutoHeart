@@ -12,12 +12,10 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import kotlinx.serialization.json.Json
 import kotlin.system.exitProcess
 
 
 object Application {
-    val jsonFormatter = Json { encodeDefaults = true }
     var autoClicker: AutoClicker? = null
     val state: MutableState<MainWindowState> = mutableStateOf(MainWindowState.SettingState)
 }

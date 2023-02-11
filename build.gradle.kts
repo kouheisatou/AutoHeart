@@ -20,9 +20,6 @@ repositories {
 dependencies {
     // compose-jb
     implementation(compose.desktop.currentOs)
-
-    // json
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 }
 
 tasks.withType<KotlinCompile> {
@@ -36,6 +33,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "AutoHeart"
             packageVersion = "1.0.0"
+            copyright = "© 2023 Kohei Sato. All rights reserved."
         }
     }
 }
