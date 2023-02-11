@@ -1,8 +1,6 @@
 import Application.autoClicker
 import Application.state
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -181,7 +179,11 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
     val resultPointedByCursor = mutableListOf<SearchResult>()
 
-    Column {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+    ) {
         LinearProgressIndicator(
             progress = if (autoClicker.processing.value) {
                 autoClicker.percentage.value

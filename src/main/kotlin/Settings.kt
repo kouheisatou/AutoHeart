@@ -1,6 +1,8 @@
 import Application.state
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -49,7 +51,11 @@ fun SettingScreen() {
         }
     ) {
 
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ){
             Row {
                 Text("自動終了回数 : ${String.format("%06d", Settings.stopCount.value)}")
                 Slider(
