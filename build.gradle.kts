@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.10")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.6.10")
 }
 
 tasks.withType<KotlinCompile> {
