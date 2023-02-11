@@ -18,8 +18,11 @@ repositories {
 }
 
 dependencies {
+    // compose-jb
     implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.6.10")
+
+    // json
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 }
 
 tasks.withType<KotlinCompile> {
