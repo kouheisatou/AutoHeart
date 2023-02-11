@@ -73,7 +73,7 @@ fun SettingScreen() {
             }
             Row {
                 var formError by remember { mutableStateOf(false) }
-                Text("検出閾値")
+                Text("重み閾値")
                 OutlinedTextField(
                     value = Settings.detectionThreshold.value.toString(),
                     onValueChange = {
@@ -91,7 +91,7 @@ fun SettingScreen() {
             }
             Row {
                 var formError by remember { mutableStateOf(false) }
-                Text("傾き許容度")
+                Text("重み勾配許容度")
                 OutlinedTextField(
                     value = Settings.steepThresholdAllowance.value.toString(),
                     onValueChange = {

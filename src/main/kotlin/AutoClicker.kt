@@ -58,6 +58,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 r.delay(Settings.clickInterval)
             }
 
+            // あらかじめ重み傾き閾値を自動決定しておく
             val steepThreshold = binaryTemplateImage.calcSteepThreshold()
             println("steepThreshold = $steepThreshold")
             println("detectionThreshold = ${Settings.detectionThreshold.value}")
@@ -202,7 +203,9 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
             }
 
             if (autoClicker.processing.value) {
-                Text("マウスを自動クリック範囲外に持っていくと終了")
+                if(Settings.testMode.value) {
+                    Text("マウスを自動クリック範囲外に持っていくと終了")
+                }
             } else {
                 Text("テストモード")
                 Switch(Settings.testMode.value, onCheckedChange = {
@@ -356,6 +359,7 @@ fun AutoClickerScreen() {
             TopAppBar(modifier = Modifier.fillMaxWidth()) {
                 Row {
                     IconButton(onClick = {
+                        autoClicker!!.stop()
                         state.value = MainWindowState.SettingState
                     }) {
                         Text("<")
