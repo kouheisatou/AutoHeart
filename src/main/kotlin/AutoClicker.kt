@@ -179,11 +179,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
     val resultPointedByCursor = mutableListOf<SearchResult>()
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-    ) {
+    Column {
         LinearProgressIndicator(
             progress = if (autoClicker.processing.value) {
                 autoClicker.percentage.value
