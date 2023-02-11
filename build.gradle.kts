@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "me.koheisato"
-version = "1.0"
+version = "1.0.0"
 
 repositories {
     google()
@@ -18,8 +18,8 @@ repositories {
 }
 
 dependencies {
-    // compose-jb
     implementation(compose.desktop.currentOs)
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.10")
 }
 
 tasks.withType<KotlinCompile> {
