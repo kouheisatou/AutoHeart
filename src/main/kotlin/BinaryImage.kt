@@ -139,8 +139,9 @@ open class BinaryImage(
         }
 
         for (x in weightMap.indices) {
-            for (y in weightMap[x].indices) {
+            pixels@ for (y in weightMap[x].indices) {
 
+                // 重みアルファマップに書き込み
                 val alpha = if (maxWeight != 0) {
                     0xff * weightMap[x][y] / maxWeight
                 } else {
@@ -178,7 +179,6 @@ open class BinaryImage(
                 val steepAverage = steepSum / availableSteepValueCount
                 // 重みの傾きが事前に計算した正しい傾きより大幅に小さければ除外
                 if(steepThreshold - steepAverage > steepThresholdAllowance) continue
-//                if(steepAverage < 12.0) continue
 
                 val templateImageCoordinateX = x - (templateImage.width - templateImage.representativePixel.x)
                 val templateImageCoordinateY = y - (templateImage.height - templateImage.representativePixel.y)
@@ -199,6 +199,15 @@ open class BinaryImage(
                 // 正しいweightAverageよりも大幅に大きかったら除外
                 if (weightAvg >= correctWeightAverage + Settings.weightAverageThreshold.value) continue
                 **/
+
+                // すでにboundingBoxがある場合除外
+                for (alreadyRegisteredResult in results) {
+                    val centerX = (templateImageCoordinateX * 2 + templateImage.width) / 2
+                    val centerY = (templateImageCoordinateY * 2 + templateImage.height) / 2
+                    if(centerX in alreadyRegisteredResult.x .. alreadyRegisteredResult.x+alreadyRegisteredResult.width && centerY in alreadyRegisteredResult.y .. alreadyRegisteredResult.y + alreadyRegisteredResult.height){
+                        continue@pixels
+                    }
+                }
 
                 val result = SearchResult(
                     boundingBoxCount++,

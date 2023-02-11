@@ -4,6 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
@@ -61,7 +64,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
             // あらかじめ重み傾き閾値を自動決定しておく
             val steepThreshold = binaryTemplateImage.calcSteepThreshold()
             println("steepThreshold = $steepThreshold")
-            println("detectionThreshold = ${Settings.detectionThreshold.value}")
+            println("detectionThreshold = ${Settings.weightThreshold.value}")
 
             while (processing.value) {
 
@@ -77,7 +80,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 try {
                     searchResult.value = binaryCapturedImage!!.find(
                         binaryTemplateImage,
-                        Settings.detectionThreshold.value,
+                        Settings.weightThreshold.value,
                         steepThreshold,
                         Settings.steepThresholdAllowance.value,
                     )
@@ -87,7 +90,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 }
 
                 // 画像検索に利用した重みマップを重ねて表示
-                if(Settings.testMode.value) {
+                if (Settings.testMode.value) {
                     weightMapAlphaImage.value = binaryCapturedImage!!.weightMapAlphaImage
                 }
 
@@ -98,21 +101,24 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 }
 
                 // 検索結果の座標をすべてクリックする
-                for (coordinate in searchResult.value) {
+                for (result in searchResult.value) {
 
-                    // boundingBoxが自動クリックエリア外の場合、スキップ
-                    if (!((area.x + (coordinate.x * 2 + coordinate.width).toFloat() / 2.0f).toInt() in area.x..area.x + area.width && (area.y + (coordinate.y * 2 + coordinate.height).toFloat() / 2.0f).toInt() in area.y..area.y + area.height)) {
+                    // クリック位置
+                    val clickPointX = (area.x + (result.x * 2 + result.width).toFloat() / 2.0f).toInt()
+                    val clickPointY = (area.y + (result.y * 2 + result.height).toFloat() / 2.0f).toInt()
+
+                    // クリック位置が自動クリックエリア外の場合スキップ
+                    if (!(clickPointX in area.x..area.x + area.width && clickPointY in area.y..area.y + area.height)) {
                         continue
                     }
 
                     if (!Settings.testMode.value) {
                         // 自動クリック
                         r.mouseMove(
-                            (area.x + (coordinate.x * 2 + coordinate.width).toFloat() / 2.0f).toInt(),
-                            (area.y + (coordinate.y * 2 + coordinate.height).toFloat() / 2.0f).toInt(),
+                            clickPointX,
+                            clickPointY,
                         )
                         r.mousePress(InputEvent.BUTTON1_DOWN_MASK)
-                        r.delay(Settings.clickTime)
                         r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
 
                         // マウスを自動クリック範囲外に持っていくと終了
@@ -138,7 +144,6 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 if (!Settings.testMode.value) {
                     if (searchResult.value.isEmpty()) {
                         r.keyPress(Key.PageDown.nativeKeyCode)
-                        r.delay(Settings.clickTime)
                         r.keyRelease(Key.PageDown.nativeKeyCode)
                     }
                 }
@@ -174,6 +179,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 @Composable
 fun AutoClickerComponent(autoClicker: AutoClicker) {
     var imageSize by remember { mutableStateOf<IntSize>(IntSize.Zero) }
+    val resultPointedByCursor = mutableListOf<SearchResult>()
 
     Column {
         LinearProgressIndicator(
@@ -203,7 +209,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
             }
 
             if (autoClicker.processing.value) {
-                if(Settings.testMode.value) {
+                if (!Settings.testMode.value) {
                     Text("マウスを自動クリック範囲外に持っていくと終了")
                 }
             } else {
@@ -226,7 +232,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                         .offsetMultiResolutionDisplay(
                             autoClicker.binaryTemplateImage.representativePixel.x.toFloat(),
                             autoClicker.binaryTemplateImage.representativePixel.y.toFloat(),
-                            Settings.displayScalingFactor,
+                            getDisplayScalingFactor(),
                         )
                         .background(Color.Red)
                 )
@@ -257,29 +263,31 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
 
             // search result point
             for (result in autoClicker.searchResult.value) {
-                Text(
-                    result.id.toString(),
-                    modifier = Modifier.offsetMultiResolutionDisplay(
-                        result.x.toFloat(),
-                        result.y.toFloat(),
-                        Settings.displayScalingFactor
+                if (Settings.testMode.value) {
+                    Text(
+                        result.id.toString(),
+                        modifier = Modifier.offsetMultiResolutionDisplay(
+                            result.x.toFloat(),
+                            result.y.toFloat(),
+                            getDisplayScalingFactor(),
+                        )
                     )
-                )
+                }
                 // bounding box
                 Box(
                     modifier = Modifier
                         .offsetMultiResolutionDisplay(
                             result.x.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
                             result.y.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
-                            Settings.displayScalingFactor,
+                            getDisplayScalingFactor(),
                         )
                         .widthMultiResolutionDisplay(
                             autoClicker.binaryTemplateImage.width.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
-                            Settings.displayScalingFactor
+                            getDisplayScalingFactor(),
                         )
                         .heightMultiResolutionDisplay(
                             autoClicker.binaryTemplateImage.height.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
-                            Settings.displayScalingFactor
+                            getDisplayScalingFactor(),
                         )
                         .border(width = 1.dp, shape = RectangleShape, color = Color.Red)
                 )
@@ -290,7 +298,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                             .offsetMultiResolutionDisplay(
                                 result.representativePointX.toFloat() / autoClicker.area.width.toFloat() * imageSize.width,
                                 result.representativePointY.toFloat() / autoClicker.area.height.toFloat() * imageSize.height,
-                                Settings.displayScalingFactor,
+                                getDisplayScalingFactor(),
                             )
                             .width(3.dp)
                             .height(3.dp)
@@ -300,8 +308,7 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
                     // クリックした部分にかぶるboundingBoxをprint
                     val cursorPosition = weightDebugCursorPosition.value
                     if (cursorPosition.x.toInt() in result.x..result.x + result.width && cursorPosition.y.toInt() in result.y..result.y + result.height) {
-                        print("cursor(${cursorPosition.x},${cursorPosition.y}) ->  ")
-                        println(result)
+                        resultPointedByCursor.add(result)
                     }
                 }
             }
@@ -310,31 +317,43 @@ fun AutoClickerComponent(autoClicker: AutoClicker) {
             if (Settings.testMode.value) {
                 if (autoClicker.binaryCapturedImage?.weightMap != null) {
                     val cursorPosition = weightDebugCursorPosition.value
-                    Box(
-                        modifier = Modifier
-                            .offsetMultiResolutionDisplay(
-                                cursorPosition.x,
-                                cursorPosition.y,
-                                Settings.displayScalingFactor
-                            )
-                            .height(1.dp)
-                            .width(1.dp)
-                            .background(color = Color.Black),
-                    )
-                    if (cursorPosition.x.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap.size && cursorPosition.y.toInt() in 0..autoClicker.binaryCapturedImage!!.weightMap[0].size) {
-                        Text(
-                            String.format(
-                                "%.2f",
-                                autoClicker.binaryCapturedImage!!.weightMap[cursorPosition.x.toInt()][cursorPosition.y.toInt()].toDouble() / autoClicker.binaryCapturedImage!!.maxWeight
-                            ),
+                    if (cursorPosition.x.toInt() in 0 until autoClicker.binaryCapturedImage!!.weightMap.size && cursorPosition.y.toInt() in 0 until autoClicker.binaryCapturedImage!!.weightMap[0].size) {
+                        Column(
                             modifier = Modifier
                                 .offsetMultiResolutionDisplay(
                                     cursorPosition.x,
                                     cursorPosition.y,
-                                    Settings.displayScalingFactor
+                                    getDisplayScalingFactor()
                                 ),
-                        )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .height(1.dp)
+                                    .width(1.dp)
+                                    .background(color = Color.Black),
+                            )
+                            Text(
+                                "(${cursorPosition.x},${cursorPosition.y})\nweight=" +
+                                        String.format(
+                                            "%.2f",
+                                            autoClicker.binaryCapturedImage!!.weightMap[cursorPosition.x.toInt()][cursorPosition.y.toInt()].toDouble() / autoClicker.binaryCapturedImage!!.maxWeight
+                                        ),
+                            )
+                            LazyColumn {
+                                items(resultPointedByCursor){
+                                    Text(it.toString())
+                                }
+                            }
+                        }
                     }
+                }
+            }
+        }
+        if (Settings.testMode.value) {
+            Divider()
+            LazyColumn {
+                items(autoClicker.searchResult.value) {
+                    Text(it.toString())
                 }
             }
         }

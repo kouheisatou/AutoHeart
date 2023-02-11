@@ -12,10 +12,7 @@ import java.awt.image.BufferedImage
 object Settings {
     val captureArea = MutableStateFlow<Rectangle?>(null)
     val templateArea = MutableStateFlow<Rectangle?>(null)
-    val displayScalingFactor
-        get() = getDisplayScalingFactor()
-    val detectionThreshold = mutableStateOf(0.60)
-    val clickTime = 3
+    val weightThreshold = mutableStateOf(0.60)
     val clickInterval = 10
     val nextImageInterval = 100
 
@@ -75,13 +72,13 @@ fun SettingScreen() {
                 var formError by remember { mutableStateOf(false) }
                 Text("重み閾値")
                 OutlinedTextField(
-                    value = Settings.detectionThreshold.value.toString(),
+                    value = Settings.weightThreshold.value.toString(),
                     onValueChange = {
                         try {
                             if(it.toDouble() < 0 || it.toDouble() >1){
                                 throw Exception()
                             }
-                            Settings.detectionThreshold.value = it.toDouble()
+                            Settings.weightThreshold.value = it.toDouble()
                             formError = false
                         }catch (e: Exception){
                             formError = true

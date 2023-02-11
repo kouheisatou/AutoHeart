@@ -151,7 +151,7 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                 thickness = 1.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offsetMultiResolutionDisplay(x = null, y = mouseY!!, Settings.displayScalingFactor)
+                    .offsetMultiResolutionDisplay(x = null, y = mouseY!!, getDisplayScalingFactor())
             )
             Divider(
                 color = Color.Red,
@@ -159,16 +159,16 @@ fun AreaSelectorComponent(areaSelector: AreaSelector, title: String) {
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(1.dp)
-                    .offsetMultiResolutionDisplay(x = mouseX!!, y = null, Settings.displayScalingFactor)
+                    .offsetMultiResolutionDisplay(x = mouseX!!, y = null, getDisplayScalingFactor())
             )
             if (areaSelector.mode.value == AreaSelectorState.Dragging && areaStartX != null && areaStartY != null) {
                 Box(
                     modifier = Modifier
                         .offsetMultiResolutionDisplay(
-                            min(areaStartX!!, mouseX!!), min(areaStartY!!, mouseY!!), Settings.displayScalingFactor
+                            min(areaStartX!!, mouseX!!), min(areaStartY!!, mouseY!!), getDisplayScalingFactor()
                         )
-                        .widthMultiResolutionDisplay(abs(areaStartX!! - mouseX!!), Settings.displayScalingFactor)
-                        .heightMultiResolutionDisplay(abs(areaStartY!! - mouseY!!), Settings.displayScalingFactor)
+                        .widthMultiResolutionDisplay(abs(areaStartX!! - mouseX!!), getDisplayScalingFactor())
+                        .heightMultiResolutionDisplay(abs(areaStartY!! - mouseY!!), getDisplayScalingFactor())
                         .border(1.dp, color = Color.Red)
                 )
             }
