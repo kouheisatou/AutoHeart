@@ -23,7 +23,7 @@ object Settings {
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)
     val stopCount = mutableStateOf(10000)
     val testMode = mutableStateOf(true)
-    val steepDelta = 2
+    val steepDelta = mutableStateOf(2)
     var steepThresholdAllowance = mutableStateOf(12.0)
 }
 
@@ -55,19 +55,19 @@ fun SettingScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-        ){
+        ) {
             Row {
                 Text("自動終了回数 : ${String.format("%06d", Settings.stopCount.value)}")
                 Slider(
                     value = Settings.stopCount.value.toFloat(),
                     onValueChange = {
-                        try{
+                        try {
                             Settings.stopCount.value = it.toInt()
-                        }catch (e: Exception){
+                        } catch (e: Exception) {
                             e.printStackTrace()
                         }
                     },
-                    valueRange = 1f .. 100000f
+                    valueRange = 1f..100000f
                 )
             }
             Row {
@@ -75,9 +75,9 @@ fun SettingScreen() {
                 Slider(
                     value = Settings.weightThreshold.value.toFloat(),
                     onValueChange = {
-                        try{
+                        try {
                             Settings.weightThreshold.value = it.toDouble()
-                        }catch (e: Exception){
+                        } catch (e: Exception) {
                             e.printStackTrace()
                         }
                     },
@@ -89,13 +89,27 @@ fun SettingScreen() {
                 Slider(
                     value = Settings.steepThresholdAllowance.value.toFloat(),
                     onValueChange = {
-                        try{
+                        try {
                             Settings.steepThresholdAllowance.value = it.toDouble()
-                        }catch (e: Exception){
+                        } catch (e: Exception) {
                             e.printStackTrace()
                         }
                     },
                     valueRange = 0f..100f,
+                )
+            }
+            Row {
+                Text("重み勾配測定距離 : ${String.format("%02d", Settings.steepDelta.value)}")
+                Slider(
+                    value = Settings.steepDelta.value.toFloat(),
+                    onValueChange = {
+                        try {
+                            Settings.steepDelta.value = it.toInt()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    },
+                    valueRange = 1f..99f,
                 )
             }
             Row {

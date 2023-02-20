@@ -93,7 +93,7 @@ open class BinaryImage(
             }
         }
 
-        val d = Settings.steepDelta
+        val d = Settings.steepDelta.value
         var steepSum = 0.0
         var availableSteepValueCount = 0
         if(maxWeightX + d in 0 until width){
@@ -157,7 +157,7 @@ open class BinaryImage(
                 if (weightMap[x][y].toDouble() / templateImage.whitePixels.size < detectionThreshold) continue
 
                 // 上下左右の重みの傾きの平均値を求める
-                val d = Settings.steepDelta
+                val d = Settings.steepDelta.value
                 var steepSum = 0.0
                 var availableSteepValueCount = 0
                 if(x + d in 0 until width){
