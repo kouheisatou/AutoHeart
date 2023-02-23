@@ -16,8 +16,8 @@ object Settings {
     val captureArea = MutableStateFlow<Rectangle?>(null)
     val templateArea = MutableStateFlow<Rectangle?>(null)
     val weightThreshold = mutableStateOf(0.60)
-    val clickInterval = 10
-    val nextImageInterval = 100
+    val clickInterval = mutableStateOf(500)
+    val nextImageInterval = mutableStateOf(2000)
 
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
     var templateAreaImage = mutableStateOf<BufferedImage?>(null)
@@ -71,7 +71,7 @@ fun SettingScreen() {
                 )
             }
             Row {
-                Text("重み閾値 : ${DecimalFormat("00.00").format(Settings.weightThreshold.value)}")
+                Text("重み閾値 : ${DecimalFormat("0.00").format(Settings.weightThreshold.value)}")
                 Slider(
                     value = Settings.weightThreshold.value.toFloat(),
                     onValueChange = {
@@ -110,6 +110,34 @@ fun SettingScreen() {
                         }
                     },
                     valueRange = 1f..99f,
+                )
+            }
+            Row {
+                Text("クリック間隔 : ${DecimalFormat("00.00").format(Settings.clickInterval.value.toFloat()/1000f)}s")
+                Slider(
+                    value = Settings.clickInterval.value.toFloat()/1000f,
+                    onValueChange = {
+                        try {
+                            Settings.clickInterval.value = (it * 1000f).toInt()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    },
+                    valueRange = 0f..10f,
+                )
+            }
+            Row {
+                Text("画像認識間隔 : ${DecimalFormat("00.00").format(Settings.nextImageInterval.value.toFloat()/1000f)}s")
+                Slider(
+                    value = Settings.nextImageInterval.value.toFloat()/1000f,
+                    onValueChange = {
+                        try {
+                            Settings.nextImageInterval.value = (it * 1000f).toInt()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    },
+                    valueRange = 0f..10f,
                 )
             }
             Row {

@@ -56,7 +56,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
             val r = Robot()
             if (!Settings.testMode.value) {
                 r.mouseMove(area.x, area.y)
-                r.delay(Settings.clickInterval)
+                r.delay(Settings.clickInterval.value)
             }
 
             // あらかじめ重み傾き閾値を自動決定しておく
@@ -127,7 +127,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
 
                         // マウス位置リセット（マウスホバーでダイアログが出るのを回避するため）
                         r.mouseMove(area.x, area.y)
-                        r.delay(Settings.clickInterval)
+                        r.delay(Settings.clickInterval.value)
 
                         // マウスを自動クリック範囲外に持っていくと終了
                         if (isCursorOutside()) {
@@ -138,13 +138,9 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 }
                 count++
 
-                // クリックすべきものがなくなったらスクロールして次の画像を読み込む
-                if (!Settings.testMode.value) {
-                    if (searchResult.value.isEmpty()) {
-                        r.keyPress(Key.PageDown.nativeKeyCode)
-                        r.keyRelease(Key.PageDown.nativeKeyCode)
-                    }
-                }
+                // スクロール
+                r.keyPress(Key.PageDown.nativeKeyCode)
+                r.keyRelease(Key.PageDown.nativeKeyCode)
 
                 // stopCountを超えたら自動終了
                 if (count >= Settings.stopCount.value) {
@@ -153,7 +149,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 }
 
                 // キャプチャインターバル
-                r.delay(Settings.nextImageInterval)
+                r.delay(Settings.nextImageInterval.value)
             }
         }
     }
