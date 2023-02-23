@@ -51,7 +51,7 @@ compose.desktop {
                     val prop = Properties()
                     prop.load(File("${project.rootDir}/certification.properties").inputStream())
                     appleID.set(prop.getProperty("appleId"))
-                    password.set(prop.getProperty("password"))
+                    password.set(prop.getProperty("appPassword"))
                 }
             }
         }
