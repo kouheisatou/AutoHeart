@@ -17,6 +17,7 @@ object Settings {
     val templateArea = MutableStateFlow<Rectangle?>(null)
     val weightThreshold = mutableStateOf(0.60)
     val clickInterval = mutableStateOf(500)
+    val scrollAmount = mutableStateOf(5)
     val nextImageInterval = mutableStateOf(2000)
 
     var captureAreaImage = mutableStateOf<BufferedImage?>(null)
@@ -113,9 +114,9 @@ fun SettingScreen() {
                 )
             }
             Row {
-                Text("クリック間隔 : ${DecimalFormat("00.00").format(Settings.clickInterval.value.toFloat()/1000f)}s")
+                Text("クリック間隔 : ${DecimalFormat("00.00").format(Settings.clickInterval.value.toFloat() / 1000f)}s")
                 Slider(
-                    value = Settings.clickInterval.value.toFloat()/1000f,
+                    value = Settings.clickInterval.value.toFloat() / 1000f,
                     onValueChange = {
                         try {
                             Settings.clickInterval.value = (it * 1000f).toInt()
@@ -127,9 +128,25 @@ fun SettingScreen() {
                 )
             }
             Row {
-                Text("画像認識間隔 : ${DecimalFormat("00.00").format(Settings.nextImageInterval.value.toFloat()/1000f)}s")
+                Text("自動スクロール量 : ${DecimalFormat("00").format(Settings.scrollAmount.value.toFloat())}")
+                var amount by remember { mutableStateOf(Settings.scrollAmount.value.toFloat()) }
                 Slider(
-                    value = Settings.nextImageInterval.value.toFloat()/1000f,
+                    value = amount,
+                    onValueChange = {
+                        try {
+                            amount = it
+                            Settings.scrollAmount.value = it.toInt()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    },
+                    valueRange = 0f..100f,
+                )
+            }
+            Row {
+                Text("画像認識間隔 : ${DecimalFormat("00.00").format(Settings.nextImageInterval.value.toFloat() / 1000f)}s")
+                Slider(
+                    value = Settings.nextImageInterval.value.toFloat() / 1000f,
                     onValueChange = {
                         try {
                             Settings.nextImageInterval.value = (it * 1000f).toInt()

@@ -139,8 +139,7 @@ class AutoClicker(val area: Rectangle, val templateImage: BufferedImage) {
                 count++
 
                 // スクロール
-                r.keyPress(Key.PageDown.nativeKeyCode)
-                r.keyRelease(Key.PageDown.nativeKeyCode)
+                r.mouseWheel(-Settings.scrollAmount.value)
 
                 // stopCountを超えたら自動終了
                 if (count >= Settings.stopCount.value) {
