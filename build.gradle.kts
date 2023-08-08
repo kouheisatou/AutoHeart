@@ -38,7 +38,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "AutoHeart"
-            packageVersion = "1.0.1"
+            packageVersion = "1.0.2"
             copyright = "© 2023 Kohei Sato. All rights reserved."
 
             macOS {
